@@ -1,0 +1,150 @@
+DROP SCHEMA IF EXISTS trekr CASCADE;
+
+CREATE SCHEMA trekr;
+
+SET search_path TO trekr;
+DROP TABLE IF EXISTS TASK_DAILY_COMPLETION;
+DROP TABLE IF EXISTS DAILY_COMPLETION;
+DROP TABLE IF EXISTS TASKS;
+DROP TABLE IF EXISTS CUSTOM_TRACKING_CATEGORIES;
+DROP TABLE IF EXISTS ASSETS;
+DROP TABLE IF EXISTS INVESTOR_USERS;
+DROP TABLE IF EXISTS DAILY_INTAKES;
+DROP TABLE IF EXISTS WEIGHT_USERS;
+DROP TABLE IF EXISTS TRAINING_SESSIONS;
+DROP TABLE IF EXISTS TRAINING_USERS;
+DROP TABLE IF EXISTS INCOMES;
+DROP TABLE IF EXISTS FINANCE_USERS;
+DROP TABLE IF EXISTS DISCIPLINE_USERS;
+DROP TABLE IF EXISTS USERS;
+
+CREATE TABLE USERS (
+    user_id BIGINT PRIMARY KEY,
+    email TEXT NOT NULL,
+    username TEXT NOT NULL,
+    password TEXT NOT NULL
+);
+
+CREATE TABLE FINANCE_USERS (
+    user_id BIGINT PRIMARY KEY
+        REFERENCES USERS(user_id) ON DELETE CASCADE,
+    spending_budget NUMERIC,
+    saving_budget NUMERIC,
+    investing_budget NUMERIC,
+    donation_budget NUMERIC,
+    credit NUMERIC
+);
+
+CREATE TABLE INCOMES (
+    income_id BIGINT PRIMARY KEY,
+    user_id BIGINT
+        REFERENCES FINANCE_USERS(user_id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    amount NUMERIC NOT NULL
+);
+
+CREATE TABLE TRAINING_USERS (
+    user_id BIGINT PRIMARY KEY
+        REFERENCES USERS(user_id) ON DELETE CASCADE,
+    gender TEXT,
+    age INTEGER,
+    weight NUMERIC
+);
+
+CREATE TABLE WEIGHT_USERS (
+    user_id BIGINT PRIMARY KEY
+        REFERENCES USERS(user_id) ON DELETE CASCADE,
+    weight NUMERIC,
+    height NUMERIC,
+    goal_weight NUMERIC,
+    goal_calories NUMERIC
+);
+
+CREATE TABLE DAILY_INTAKES (
+    daily_intake_id BIGINT PRIMARY KEY,
+    user_id BIGINT
+        REFERENCES WEIGHT_USERS(user_id) ON DELETE CASCADE,
+    calories NUMERIC,
+    date DATE
+);
+
+CREATE TABLE TRAINING_SESSIONS (
+    training_id BIGINT PRIMARY KEY,
+    training_user_id BIGINT
+        REFERENCES TRAINING_USERS(user_id) ON DELETE CASCADE,
+    weight_user_id BIGINT
+        REFERENCES WEIGHT_USERS(user_id) ON DELETE CASCADE,
+    duration NUMERIC,
+    calories NUMERIC,
+    date DATE,
+    type TEXT
+);
+
+CREATE TABLE DISCIPLINE_USERS (
+    user_id BIGINT PRIMARY KEY
+        REFERENCES USERS(user_id) ON DELETE CASCADE,
+    num_tasks INTEGER,
+    tasks TEXT
+);
+
+CREATE TABLE CUSTOM_TRACKING_CATEGORIES (
+    custom_tracking_id BIGINT PRIMARY KEY,
+    user_id BIGINT
+        REFERENCES USERS(user_id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    num_tasks INTEGER,
+    tasks TEXT
+);
+
+CREATE TABLE TASKS (
+    task_id BIGINT PRIMARY KEY,
+    name TEXT NOT NULL,
+    is_finished BOOLEAN NOT NULL DEFAULT FALSE,
+
+    discipline_user_id BIGINT
+        REFERENCES DISCIPLINE_USERS(user_id) ON DELETE CASCADE,
+
+    custom_tracking_id BIGINT
+        REFERENCES CUSTOM_TRACKING_CATEGORIES(custom_tracking_id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT task_belongs_to_exactly_one_category
+        CHECK (
+            (discipline_user_id IS NOT NULL AND custom_tracking_id IS NULL)
+            OR
+            (discipline_user_id IS NULL AND custom_tracking_id IS NOT NULL)
+        )
+);
+
+CREATE TABLE DAILY_COMPLETION (
+    daily_completion_id BIGINT PRIMARY KEY,
+    user_id BIGINT
+        REFERENCES USERS(user_id) ON DELETE CASCADE,
+    date DATE,
+    procent NUMERIC
+);
+
+CREATE TABLE TASK_DAILY_COMPLETION (
+    task_id BIGINT
+        REFERENCES TASKS(task_id) ON DELETE CASCADE,
+    daily_completion_id BIGINT
+        REFERENCES DAILY_COMPLETION(daily_completion_id) ON DELETE CASCADE,
+
+    CONSTRAINT task_daily_completion_pk
+        PRIMARY KEY (task_id, daily_completion_id)
+);
+
+CREATE TABLE INVESTOR_USERS (
+    user_id BIGINT PRIMARY KEY
+        REFERENCES USERS(user_id) ON DELETE CASCADE
+);
+
+CREATE TABLE ASSETS (
+    asset_id BIGINT PRIMARY KEY,
+    user_id BIGINT
+        REFERENCES INVESTOR_USERS(user_id) ON DELETE CASCADE,
+    ticker_symbol TEXT NOT NULL,
+    buy_price NUMERIC,
+    buy_date DATE,
+    quantity NUMERIC
+);
