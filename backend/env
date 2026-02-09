@@ -1,0 +1,54 @@
+# ============================================
+# REQUIRED FOR STARTUP - Database Connection
+# ============================================
+# PostgreSQL connection parameters
+# Make sure your SSH tunnel is running (tunnel_scripta.sh) before starting the app
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:9999/db_202526z_va_prj_trekr
+SPRING_DATASOURCE_USERNAME=db_202526z_va_prj_trekr_owner
+SPRING_DATASOURCE_PASSWORD=39ee816617c3
+
+# ============================================
+# REQUIRED FOR STARTUP - JWT Secret Key
+# ============================================
+# Used for signing/verifying JWT tokens in authentication
+# Generate a secure random string (at least 256 bits/32 characters)
+# For development, you can use this temporary value, but CHANGE IT in production!
+# To generate: openssl rand -base64 32
+JWT_CONFIG_SECRET=dev-temporary-secret-key-change-in-production-min-32-chars
+
+# ============================================
+# OPTIONAL - AWS S3 (File Storage)
+# ============================================
+# Only needed if you're storing files/images in AWS S3
+# Get these from: AWS Console -> IAM -> Users -> Create Access Key
+# Or: AWS Console -> S3 -> Your Bucket -> Properties
+AWS_S3_REGION=
+AWS_S3_BUCKET_NAME=
+AWS_S3_ACCESS_KEY=
+AWS_S3_SECRET_KEY=
+
+# ============================================
+# OPTIONAL - Email Service (SMTP)
+# ============================================
+# Only needed if you're sending emails (password reset, notifications, etc.)
+# Options:
+#   - Gmail: smtp.gmail.com, port 587
+#   - Outlook: smtp-mail.outlook.com, port 587
+#   - SendGrid: smtp.sendgrid.net, port 587
+#   - Mailtrap (testing): smtp.mailtrap.io, port 2525
+EMAIL_HOST=
+EMAIL_PORT=
+EMAIL_USERNAME=
+EMAIL_PASSWORD=
+
+# ============================================
+# OPTIONAL - Google OAuth (Social Login)
+# ============================================
+# Only needed if you want users to sign in with Google
+# Get these from: https://console.cloud.google.com/
+#   1. Create a project
+#   2. Enable Google+ API
+#   3. Create OAuth 2.0 credentials
+#   4. Add authorized redirect URI: http://localhost:8080/login/oauth2/code/google
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
