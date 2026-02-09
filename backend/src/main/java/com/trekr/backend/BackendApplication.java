@@ -11,14 +11,14 @@ public class BackendApplication {
         // Load .env file BEFORE Spring Boot starts
         // This ensures system properties are available for ${} placeholder resolution
         Dotenv dotenv = loadEnvironmentVariables();
-        
+
         // Create SpringApplication instance
         SpringApplication app = new SpringApplication(BackendApplication.class);
-        
+
         // Set system properties and default properties from .env file
         if (dotenv != null) {
             java.util.Map<String, Object> defaultProps = new java.util.HashMap<>();
-            
+
             dotenv.entries().forEach(entry -> {
                 String key = entry.getKey();
                 String value = entry.getValue();
@@ -29,61 +29,50 @@ public class BackendApplication {
                     defaultProps.put(key, value);
                 }
             });
-            
+
             // Set all default properties at once
             if (!defaultProps.isEmpty()) {
                 app.setDefaultProperties(defaultProps);
             }
         }
-        
+
         app.run(args);
     }
-    
+
     private static Dotenv loadEnvironmentVariables() {
         Dotenv dotenv = null;
-        try {
-            // Try current directory (backend/)
-            dotenv = Dotenv.configure()
-                    .directory("./")
-                    .ignoreIfMissing()
-                    .load();
-        } catch (Exception e) {
-            // Try parent directory if current doesn't work
+
+        // Prefer a standard ".env" file, but also support the existing "env" file.
+        // We search multiple locations so it works whether the app is launched from:
+        // - backend/ (common in IDE)
+        // - repo root (common when running a built JAR)
+        String[][] candidates = new String[][] {
+                { "./", ".env" },
+                { "./", "env" },
+                { "./backend", ".env" },
+                { "./backend", "env" },
+                { "../", ".env" },
+                { "../", "env" },
+                { "../backend", ".env" },
+                { "../backend", "env" },
+        };
+
+        for (String[] candidate : candidates) {
             try {
-                dotenv = Dotenv.configure()
-                        .directory("../")
+                Dotenv loaded = Dotenv.configure()
+                        .directory(candidate[0])
+                        .filename(candidate[1])
                         .ignoreIfMissing()
                         .load();
-            } catch (Exception e2) {
-                System.err.println("WARNING: Could not load .env file. Make sure .env exists in backend/ directory.");
-                System.err.println("Error: " + e2.getMessage());
-                return null;
+                if (loaded != null && !loaded.entries().isEmpty()) {
+                    dotenv = loaded;
+                    break;
+                }
+            } catch (Exception ignored) {
+                // keep searching
             }
         }
-        
-        // Verify critical properties are loaded
-        if (dotenv != null) {
-            String url = dotenv.get("SPRING_DATASOURCE_URL");
-            String username = dotenv.get("SPRING_DATASOURCE_USERNAME");
-            String password = dotenv.get("SPRING_DATASOURCE_PASSWORD");
-            
-            if (url != null && !url.trim().isEmpty()) {
-                System.out.println("✓ Database URL loaded from .env");
-            } else {
-                System.err.println("✗ ERROR: SPRING_DATASOURCE_URL not found in .env file!");
-            }
-            if (username != null && !username.trim().isEmpty()) {
-                System.out.println("✓ Database username loaded from .env");
-            } else {
-                System.err.println("✗ ERROR: SPRING_DATASOURCE_USERNAME not found in .env file!");
-            }
-            if (password != null && !password.trim().isEmpty()) {
-                System.out.println("✓ Database password loaded from .env");
-            } else {
-                System.err.println("✗ ERROR: SPRING_DATASOURCE_PASSWORD not found in .env file!");
-            }
-        }
-        
+
         return dotenv;
     }
 

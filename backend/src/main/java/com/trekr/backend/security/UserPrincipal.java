@@ -1,7 +1,6 @@
 package com.trekr.backend.security;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.io.Serializable;
 
@@ -10,9 +9,16 @@ import java.io.Serializable;
  * Controllers can inject this or get it from SecurityContextHolder.
  */
 @Getter
-@RequiredArgsConstructor
 public class UserPrincipal implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final Long userId;
     private final String username;
     private final String email;
+
+    public UserPrincipal(Long userId, String username, String email) {
+        this.userId = userId;
+        this.username = username;
+        this.email = email;
+    }
 }

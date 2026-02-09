@@ -32,6 +32,14 @@ INSERT INTO USERS (user_id, email, username, password) VALUES
 (29, 'petra@example.com', 'petra_kostova', '1234'),
 (30, 'vlado@example.com', 'vlado_ilievski', '1234');
 
+-- If USERS.user_id is an IDENTITY column, ensure its backing sequence is advanced
+-- past the inserted dummy ids so future inserts (e.g., app registration) don't
+-- try to reuse ids and fail with duplicate key errors.
+SELECT setval(
+	pg_get_serial_sequence('trekr.users', 'user_id'),
+	(SELECT COALESCE(MAX(user_id), 0) FROM trekr.users)
+);
+
 INSERT INTO FINANCE_USERS (user_id, spending_budget, saving_budget, investing_budget, donation_budget, credit) VALUES
 (1, 500, 200, 300, 50, 1000),
 (2, 600, 250, 200, 30, 500),

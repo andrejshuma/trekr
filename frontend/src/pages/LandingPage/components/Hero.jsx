@@ -1,6 +1,21 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 const Hero = () => {
+  const [isAuthed, setIsAuthed] = useState(() =>
+    Boolean(localStorage.getItem("authToken")),
+  );
+
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === "authToken") {
+        setIsAuthed(Boolean(e.newValue));
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   return (
     <div
       className="hero min-h-screen"
@@ -20,7 +35,12 @@ const Hero = () => {
             budgeting, investing, and daily discipline tasks. Set goals, log
             consistently, and see your progress in one place.
           </p>
-          <button className="btn btn-primary">Get started</button>
+          <Link
+            className="btn btn-primary"
+            to={isAuthed ? "/dashboard" : "/register"}
+          >
+            {isAuthed ? "Go to dashboard" : "Get started"}
+          </Link>
         </div>
       </div>
     </div>
