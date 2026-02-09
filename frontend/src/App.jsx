@@ -1,4 +1,4 @@
-import LandingPage from "./pages/LandingPage.jsx";
+import LandingPage from "./pages/LandingPage/LandingPage.jsx";
 
 function App() {
   return <LandingPage />;
