@@ -108,6 +108,12 @@ INSERT INTO INCOMES (income_id, user_id, date, amount) VALUES
 (38, 25, '2026-02-28', 6000),
 (39, 25, '2026-03-28', 6050);
 
+-- If INCOMES.income_id is an IDENTITY column, advance its sequence past dummy ids.
+SELECT setval(
+	pg_get_serial_sequence('trekr.incomes', 'income_id'),
+	(SELECT COALESCE(MAX(income_id), 0) FROM trekr.incomes)
+);
+
 INSERT INTO TRAINING_USERS (user_id, gender, age, weight) VALUES
 (1, 'Male', 21, 73),
 (2, 'Male', 23, 80),
@@ -184,6 +190,12 @@ INSERT INTO DAILY_INTAKES (daily_intake_id, user_id, calories, date) VALUES
 (29, 20, 2200, '2026-02-09'),
 (30, 20, 2300, '2026-02-10');
 
+-- If DAILY_INTAKES.daily_intake_id is an IDENTITY column, advance its sequence past dummy ids.
+SELECT setval(
+	pg_get_serial_sequence('trekr.daily_intakes', 'daily_intake_id'),
+	(SELECT COALESCE(MAX(daily_intake_id), 0) FROM trekr.daily_intakes)
+);
+
 INSERT INTO TRAINING_SESSIONS (training_id, training_user_id, weight_user_id, duration, calories, date, type) VALUES
 (1, 1, 1, 60, 500, '2026-02-01', 'Running'),
 (2, 2, 2, 45, 400, '2026-02-01', 'Cycling'),
@@ -209,6 +221,12 @@ INSERT INTO TRAINING_SESSIONS (training_id, training_user_id, weight_user_id, du
 (22, 13, 13, 30, 260, '2026-02-12', 'Core'),
 (23, 15, 15, 70, 600, '2026-02-13', 'Long Run'),
 (24, 17, 17, 40, 320, '2026-02-13', 'Strength');
+
+-- If TRAINING_SESSIONS.training_id is an IDENTITY column, advance its sequence past dummy ids.
+SELECT setval(
+	pg_get_serial_sequence('trekr.training_sessions', 'training_id'),
+	(SELECT COALESCE(MAX(training_id), 0) FROM trekr.training_sessions)
+);
 
 INSERT INTO DISCIPLINE_USERS (user_id, num_tasks, tasks) VALUES
 (1, 2, '["Morning Run","Read Book"]'),
@@ -243,6 +261,12 @@ INSERT INTO CUSTOM_TRACKING_CATEGORIES (custom_tracking_id, user_id, name, num_t
 (13, 18, 'Language', 2, '["Duolingo","Podcast"]'),
 (14, 19, 'Gym Program', 3, '["Squat","Bench","Deadlift"]'),
 (15, 20, 'Exam Prep', 3, '["Practice","Mock","Review"]');
+
+-- If CUSTOM_TRACKING_CATEGORIES.custom_tracking_id is an IDENTITY column, advance its sequence past dummy ids.
+SELECT setval(
+	pg_get_serial_sequence('trekr.custom_tracking_categories', 'custom_tracking_id'),
+	(SELECT COALESCE(MAX(custom_tracking_id), 0) FROM trekr.custom_tracking_categories)
+);
 
 INSERT INTO TASKS (task_id, name, is_finished, discipline_user_id, custom_tracking_id) VALUES
 (1, 'Morning Run', FALSE, 1, NULL),
@@ -306,6 +330,12 @@ INSERT INTO TASKS (task_id, name, is_finished, discipline_user_id, custom_tracki
 (59, 'Mock', FALSE, NULL, 15),
 (60, 'Review Exam', FALSE, NULL, 15);
 
+-- If TASKS.task_id is an IDENTITY column, advance its sequence past dummy ids.
+SELECT setval(
+	pg_get_serial_sequence('trekr.tasks', 'task_id'),
+	(SELECT COALESCE(MAX(task_id), 0) FROM trekr.tasks)
+);
+
 INSERT INTO DAILY_COMPLETION (daily_completion_id, user_id, date, procent) VALUES
 (1, 1, '2026-02-01', 100),
 (2, 2, '2026-02-01', 50),
@@ -337,6 +367,12 @@ INSERT INTO DAILY_COMPLETION (daily_completion_id, user_id, date, procent) VALUE
 (28, 19, '2026-02-10', 34),
 (29, 20, '2026-02-09', 33),
 (30, 20, '2026-02-10', 66);
+
+-- If DAILY_COMPLETION.daily_completion_id is an IDENTITY column, advance its sequence past dummy ids.
+SELECT setval(
+	pg_get_serial_sequence('trekr.daily_completion', 'daily_completion_id'),
+	(SELECT COALESCE(MAX(daily_completion_id), 0) FROM trekr.daily_completion)
+);
 
 INSERT INTO TASK_DAILY_COMPLETION (task_id, daily_completion_id) VALUES
 (1, 1),
@@ -392,3 +428,9 @@ INSERT INTO ASSETS (asset_id, user_id, ticker_symbol, buy_price, buy_date, quant
 (15, 13, 'TSLA', 720, '2026-02-08', 0.8),
 (16, 14, 'SPY', 485, '2026-02-09', 1.5),
 (17, 15, 'NVDA', 640, '2026-02-10', 0.9);
+
+-- If ASSETS.asset_id is an IDENTITY column, advance its sequence past dummy ids.
+SELECT setval(
+	pg_get_serial_sequence('trekr.assets', 'asset_id'),
+	(SELECT COALESCE(MAX(asset_id), 0) FROM trekr.assets)
+);
