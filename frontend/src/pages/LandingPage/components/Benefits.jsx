@@ -59,7 +59,7 @@ export const Benefits = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10">
           {benefits.map((benefit, index) => (
             <div key={index} className="flex gap-4 md:gap-6">
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <div className="flex items-center justify-center h-12 w-12 md:h-16 md:w-16 rounded-full bg-primary text-white font-bold text-lg md:text-xl">
                   {benefit.number}
                 </div>

@@ -36,7 +36,7 @@ const Hero = () => {
             consistently, and see your progress in one place.
           </p>
           <Link
-            className="btn btn-primary"
+            className="btn btn-primary !text-white"
             to={isAuthed ? "/dashboard" : "/register"}
           >
             {isAuthed ? "Go to dashboard" : "Get started"}
