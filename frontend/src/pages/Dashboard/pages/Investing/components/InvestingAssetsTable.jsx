@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { MdDelete } from "react-icons/md";
 
 export default function InvestingAssetsTable({
@@ -19,6 +19,40 @@ export default function InvestingAssetsTable({
   onDelete,
   isDeletingId,
 }) {
+  const totals = useMemo(() => {
+    let totalInvested = 0;
+    let totalCurrent = 0;
+    let investedCount = 0;
+    let currentCount = 0;
+
+    for (const a of assets) {
+      const symbol = String(a?.tickerSymbol ?? "").toUpperCase();
+      const quantity = Number(a?.quantity);
+      if (!symbol || Number.isNaN(quantity) || quantity <= 0) continue;
+
+      const buyPrice = Number(a?.buyPrice);
+      if (!Number.isNaN(buyPrice) && buyPrice >= 0) {
+        totalInvested += buyPrice * quantity;
+        investedCount += 1;
+      }
+
+      const currentPrice = Number(quotesBySymbol?.[symbol]);
+      if (!Number.isNaN(currentPrice) && currentPrice >= 0) {
+        totalCurrent += currentPrice * quantity;
+        currentCount += 1;
+      }
+    }
+
+    const hasInvested = investedCount > 0 && totalInvested > 0;
+    const hasCurrent = currentCount > 0;
+    const roiPct =
+      hasInvested && hasCurrent
+        ? ((totalCurrent - totalInvested) / totalInvested) * 100
+        : null;
+
+    return { totalInvested, totalCurrent, roiPct, hasInvested, hasCurrent };
+  }, [assets, quotesBySymbol]);
+
   return (
     <div className="card bg-base-200 border border-base-300">
       <div className="card-body">
@@ -34,6 +68,58 @@ export default function InvestingAssetsTable({
             <span>{error}</span>
           </div>
         ) : null}
+
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="stat bg-base-100 rounded-box border border-base-300">
+            <div className="stat-title">Total invested</div>
+            <div className="stat-value text-xl">
+              {totals.hasInvested ? formatMoney(totals.totalInvested) : "—"}
+            </div>
+            <div className="stat-desc opacity-70">
+              Cost basis (buy price × quantity)
+            </div>
+          </div>
+
+          <div className="stat bg-base-100 rounded-box border border-base-300">
+            <div className="stat-title">Current value</div>
+            <div className="stat-value text-xl">
+              {totals.hasCurrent && !isQuotesLoading
+                ? formatMoney(totals.totalCurrent)
+                : isQuotesLoading
+                  ? "Loading…"
+                  : "—"}
+            </div>
+            <div className="stat-desc opacity-70">Live price × quantity</div>
+          </div>
+
+          <div className="stat bg-base-100 rounded-box border border-base-300">
+            <div className="stat-title">Total ROI</div>
+            <div className="stat-value text-xl">
+              {typeof totals.roiPct === "number" &&
+              !Number.isNaN(totals.roiPct) ? (
+                <span
+                  className={
+                    totals.roiPct > 0
+                      ? "text-green-400 font-semibold"
+                      : totals.roiPct < 0
+                        ? "text-red-400 font-semibold"
+                        : "opacity-80"
+                  }
+                >
+                  {totals.roiPct > 0 ? "+" : ""}
+                  {totals.roiPct.toFixed(2)}%
+                </span>
+              ) : isQuotesLoading ? (
+                "Loading…"
+              ) : (
+                "—"
+              )}
+            </div>
+            <div className="stat-desc opacity-70">
+              (current − invested) ÷ invested
+            </div>
+          </div>
+        </div>
 
         <div className="mt-4 overflow-x-auto">
           <table className="table">
