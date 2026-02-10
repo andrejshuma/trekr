@@ -1,6 +1,9 @@
 package com.trekr.backend.service;
 
+import com.trekr.backend.security.UserPrincipal;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -32,5 +35,30 @@ public class JwtService {
                 .expiration(new Date(System.currentTimeMillis() + TOKEN_VALIDITY_MS))
                 .signWith(signingKey)
                 .compact();
+    }
+
+    public boolean isTokenValid(String token) {
+        try {
+            parseClaims(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException ex) {
+            return false;
+        }
+    }
+
+    public UserPrincipal parseUserPrincipal(String token) {
+        Claims claims = parseClaims(token);
+        Long userId = Long.valueOf(claims.getSubject());
+        String username = (String) claims.get("username");
+        String email = (String) claims.get("email");
+        return new UserPrincipal(userId, username, email);
+    }
+
+    private Claims parseClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }

@@ -1,0 +1,52 @@
+<svg width="1200" height="500" viewBox="0 0 1200 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0b1f14"/>
+      <stop offset="1" stop-color="#0f2a1c"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#34d399"/>
+      <stop offset="1" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="500" rx="24" fill="url(#bg)"/>
+
+  <!-- grid -->
+  <g opacity="0.15" stroke="#FFFFFF">
+    <path d="M96 80H1120"/>
+    <path d="M96 160H1120"/>
+    <path d="M96 240H1120"/>
+    <path d="M96 320H1120"/>
+    <path d="M96 400H1120"/>
+
+    <path d="M192 64V432"/>
+    <path d="M320 64V432"/>
+    <path d="M448 64V432"/>
+    <path d="M576 64V432"/>
+    <path d="M704 64V432"/>
+    <path d="M832 64V432"/>
+    <path d="M960 64V432"/>
+    <path d="M1088 64V432"/>
+  </g>
+
+  <!-- axes -->
+  <path d="M96 432H1120" stroke="#FFFFFF" opacity="0.35"/>
+  <path d="M96 64V432" stroke="#FFFFFF" opacity="0.35"/>
+
+  <!-- line -->
+  <path d="M96 360 C 220 310, 280 240, 384 260 C 480 280, 560 180, 640 190 C 740 205, 820 120, 928 140 C 1010 155, 1060 120, 1120 110" stroke="url(#line)" stroke-width="6" fill="none"/>
+
+  <!-- points -->
+  <g fill="#34d399">
+    <circle cx="96" cy="360" r="7"/>
+    <circle cx="384" cy="260" r="7"/>
+    <circle cx="640" cy="190" r="7"/>
+    <circle cx="928" cy="140" r="7"/>
+    <circle cx="1120" cy="110" r="7"/>
+  </g>
+
+  <text x="96" y="44" fill="#E5E7EB" font-family="ui-sans-serif, system-ui" font-size="18" opacity="0.9">
+    Graph placeholder
+  </text>
+</svg>
