@@ -1,6 +1,5 @@
 package com.trekr.backend.entity.training;
 
-import com.trekr.backend.entity.weight.WeightUser;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -26,10 +25,6 @@ public class TrainingSession {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "training_user_id")
     private TrainingUser trainingUser;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "weight_user_id")
-    private WeightUser weightUser;
 
     @Column(name = "duration")
     private BigDecimal duration;
@@ -62,13 +57,6 @@ public class TrainingSession {
         this.trainingUser = trainingUser;
     }
 
-    public WeightUser getWeightUser() {
-        return weightUser;
-    }
-
-    public void setWeightUser(WeightUser weightUser) {
-        this.weightUser = weightUser;
-    }
 
     public BigDecimal getDuration() {
         return duration;

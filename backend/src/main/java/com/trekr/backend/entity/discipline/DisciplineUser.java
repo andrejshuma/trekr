@@ -23,12 +23,6 @@ public class DisciplineUser {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @Column(name = "num_tasks")
-    private Integer numTasks;
-
-    @Column(name = "tasks")
-    private String tasks;
-
     public DisciplineUser() {
     }
 
@@ -46,21 +40,5 @@ public class DisciplineUser {
 
     public void setUser(User user) {
         this.user = user;
-    }
-
-    public Integer getNumTasks() {
-        return numTasks;
-    }
-
-    public void setNumTasks(Integer numTasks) {
-        this.numTasks = numTasks;
-    }
-
-    public String getTasks() {
-        return tasks;
-    }
-
-    public void setTasks(String tasks) {
-        this.tasks = tasks;
     }
 }

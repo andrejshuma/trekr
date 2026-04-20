@@ -1,0 +1,183 @@
+# **Нормализација**
+
+== **Де-нормализирана база на податоци**
+
+Се тргнува од една глобална, де-нормализирана релација што ги содржи атрибутите од целиот модел:
+
+`R = { user_id, email, username, password, training_user_id, training_gender, training_age, training_weight, training_id, training_date, training_type, training_duration, training_calories, investor_user_id, asset_id, asset_ticker_symbol, asset_buy_price, asset_buy_date, asset_quantity, weight_user_id, weight_current, weight_height, weight_goal_weight, weight_goal_calories, daily_intake_id, daily_intake_date, daily_intake_calories, discipline_user_id, custom_tracking_id, custom_tracking_name, task_id, name, is_finished, daily_completion_id, daily_completion_date, procent, finance_user_id, finance_spending_budget, finance_saving_budget, finance_investing_budget, finance_donation_budget, finance_credit, income_id, income_date, income_amount }`
+
+Оваа релација е де-нормализирана затоа што содржи повторливи групи, како и зависности од атрибути што не се клуч.
+
+== **Функционални зависности**
+
+- **FD1:** `user_id -> email, username, password`
+- **FD2:** `email -> user_id, username, password`
+- **FD3:** `username -> user_id, email, password`
+- **FD4:** `training_user_id -> training_gender, training_age, training_weight`
+- **FD5:** `training_id -> training_user_id, training_date, training_type, training_duration, training_calories`
+- **FD6:** `investor_user_id -> user_id`
+- **FD7:** `asset_id -> investor_user_id, asset_ticker_symbol, asset_buy_price, asset_buy_date, asset_quantity`
+- **FD8:** `weight_user_id -> weight_current, weight_height, weight_goal_weight, weight_goal_calories`
+- **FD9:** `daily_intake_id -> weight_user_id, daily_intake_date, daily_intake_calories`
+- **FD10:** `discipline_user_id -> user_id`
+- **FD11:** `custom_tracking_id -> user_id, custom_tracking_name`
+- **FD12:** `task_id -> discipline_user_id, custom_tracking_id, name, is_finished`
+- **FD13:** `daily_completion_id -> user_id, daily_completion_date, procent`
+- **FD14:** `(task_id, daily_completion_id) -> /`
+- **FD15:** `finance_user_id -> finance_spending_budget, finance_saving_budget, finance_investing_budget, finance_donation_budget, finance_credit`
+- **FD16:** `income_id -> finance_user_id, income_date, income_amount`
+
+**Леви и десен дел:**
+
+- **Леви:** `user_id, email, username, training_user_id, training_id, investor_user_id, asset_id, weight_user_id, daily_intake_id, discipline_user_id, custom_tracking_id, task_id, daily_completion_id, finance_user_id, income_id`
+- **Десен:** `password, training_gender, training_age, training_weight, training_date, training_type, training_duration, training_calories, asset_ticker_symbol, asset_buy_price, asset_buy_date, asset_quantity, weight_current, weight_height, weight_goal_weight, weight_goal_calories, daily_intake_date, daily_intake_calories, custom_tracking_name, name, is_finished, daily_completion_date, procent, finance_spending_budget, finance_saving_budget, finance_investing_budget, finance_donation_budget, finance_credit, income_date, income_amount`
+
+== **Глобална релација**
+
+`R = { user_id, email, username, password, training_user_id, training_gender, training_age, training_weight, training_id, training_date, training_type, training_duration, training_calories, investor_user_id, asset_id, asset_ticker_symbol, asset_buy_price, asset_buy_date, asset_quantity, weight_user_id, weight_current, weight_height, weight_goal_weight, weight_goal_calories, daily_intake_id, daily_intake_date, daily_intake_calories, discipline_user_id, custom_tracking_id, custom_tracking_name, task_id, name, is_finished, daily_completion_id, daily_completion_date, procent, finance_user_id, finance_spending_budget, finance_saving_budget, finance_investing_budget, finance_donation_budget, finance_credit, income_id, income_date, income_amount }`
+
+== **Покривачи**
+
+- **`user_id+`** = { `user_id`, `email`, `username`, `password` } -> **не ги содржи сите атрибути**
+- **`training_user_id+`** = { `training_user_id`, `training_gender`, `training_age`, `training_weight` } -> **не ги содржи сите атрибути**
+- **`training_id+`** = { `training_id`, `training_user_id`, `training_date`, `training_type`, `training_duration`, `training_calories` } -> **не ги содржи сите атрибути**
+- **`investor_user_id+`** = { `investor_user_id`, `user_id` } -> **не ги содржи сите атрибути**
+- **`asset_id+`** = { `asset_id`, `investor_user_id`, `asset_ticker_symbol`, `asset_buy_price`, `asset_buy_date`, `asset_quantity` } -> **не ги содржи сите атрибути**
+- **`weight_user_id+`** = { `weight_user_id`, `weight_current`, `weight_height`, `weight_goal_weight`, `weight_goal_calories` } -> **не ги содржи сите атрибути**
+- **`daily_intake_id+`** = { `daily_intake_id`, `weight_user_id`, `daily_intake_date`, `daily_intake_calories` } -> **не ги содржи сите атрибути**
+- **`discipline_user_id+`** = { `discipline_user_id`, `user_id` } -> **не ги содржи сите атрибути**
+- **`custom_tracking_id+`** = { `custom_tracking_id`, `user_id`, `custom_tracking_name` } -> **не ги содржи сите атрибути**
+- **`task_id+`** = { `task_id`, `discipline_user_id`, `custom_tracking_id`, `name`, `is_finished` } -> **не ги содржи сите атрибути**
+- **`daily_completion_id+`** = { `daily_completion_id`, `user_id`, `daily_completion_date`, `procent` } -> **не ги содржи сите атрибути**
+- **`finance_user_id+`** = { `finance_user_id`, `finance_spending_budget`, `finance_saving_budget`, `finance_investing_budget`, `finance_donation_budget`, `finance_credit` } -> **не ги содржи сите атрибути**
+- **`income_id+`** = { `income_id`, `finance_user_id`, `income_date`, `income_amount` } -> **не ги содржи сите атрибути**
+- **`{task_id, daily_completion_id}+`** = { `task_id`, `daily_completion_id` } -> **не ги содржи сите атрибути**
+
+== **Спојување покривачи**
+
+Бидејќи атрибутите што се појавуваат само на левата страна не можат да се изведат на друг начин, тие мора да бидат дел од примарниот клуч.
+
+Земајќи ги сите леви атрибути заедно, добиваме минимален суперклуч:
+
+`{ user_id, training_user_id, training_id, investor_user_id, asset_id, weight_user_id, daily_intake_id, discipline_user_id, custom_tracking_id, task_id, daily_completion_id, finance_user_id, income_id }`
+
+Во нашата нормализирана конструкција, ова е теоретскиот глобален кандидат-клуч на де-нормализираната релација.
+
+Избран примарен клуч: **`{ user_id, training_user_id, training_id, investor_user_id, asset_id, weight_user_id, daily_intake_id, discipline_user_id, custom_tracking_id, task_id, daily_completion_id, finance_user_id, income_id }`**
+
+== **Проверка за 1НФ**
+
+Бидејќи релацијата содржи повторливи групи и неатомски листи во де-нормализираниот поглед, **не ја задоволува 1НФ**.
+
+== **Декомпозиција по 1НФ**
+
+**Релација што се анализира**
+
+`R`
+
+**Проблем**
+
+Лист атрибутите и повторливите групи не се атомски.
+
+**Прва декомпозиција**
+
+- `TASKS(task_id, discipline_user_id, custom_tracking_id, name, is_finished)`
+- `TASK_DAILY_COMPLETION(task_id, daily_completion_id)`
+
+**Резултат**
+
+Се добиваат атомски вредности и релации со локални клучеви.
+
+== **Проверка за 2НФ**
+
+`R` **не ја задоволува 2НФ** поради парцијални зависности, на пример:
+
+- `user_id -> email, username, password`
+- `training_user_id -> training_gender, training_age, training_weight`
+- `asset_id -> asset_ticker_symbol, asset_buy_price, asset_buy_date, asset_quantity`
+
+== **Декомпозиција по 2НФ**
+
+Атрибутите се групираат според тоа од кој клуч зависат:
+
+- **`USERS(user_id, email, username, password)`**
+- **`TRAINING_USERS(user_id, gender, age, weight)`**
+- **`TRAINING_SESSIONS(training_id, training_user_id, date, type, duration, calories)`**
+- **`INVESTOR_USERS(user_id)`**
+- **`ASSETS(asset_id, user_id, ticker_symbol, buy_price, buy_date, quantity)`**
+- **`WEIGHT_USERS(user_id, weight, height, goal_weight, goal_calories)`**
+- **`DAILY_INTAKES(daily_intake_id, user_id, date, calories)`**
+- **`DISCIPLINE_USERS(user_id)`**
+- **`CUSTOM_TRACKING_CATEGORIES(custom_tracking_id, user_id, name)`**
+- **`TASKS(task_id, discipline_user_id, custom_tracking_id, name, is_finished)`**
+- **`DAILY_COMPLETION(daily_completion_id, user_id, date, procent)`**
+- **`TASK_DAILY_COMPLETION(task_id, daily_completion_id)`**
+- **`FINANCE_USERS(user_id, spending_budget, saving_budget, investing_budget, donation_budget, credit)`**
+- **`INCOMES(income_id, user_id, date, amount)`**
+
+== **Проверка за 3НФ**
+
+Ги разгледуваме релациите добиени по 2НФ.
+
+Проблематични транзитивни/изведени атрибути се:
+
+- **`num_tasks`**
+- **`tasks`**
+- **`weight_user_id`** во `TRAINING_SESSIONS` како непотребна зависност за оваа верзија на моделот
+
+== **Декомпозиција по 3НФ**
+
+1. **`DISCIPLINE_USERS(user_id)`** -> се задржува само идентификаторот што ја врзува дисциплинската улога со `USERS`.
+
+2. **`CUSTOM_TRACKING_CATEGORIES(custom_tracking_id, user_id, name)`** -> се задржува само името на категоријата, без броење и листи на задачи.
+
+3. **`TRAINING_SESSIONS(training_id, training_user_id, date, type, duration, calories)`** -> сесијата се врзува само со `training_user_id`.
+
+**Резултат**
+
+Нема не-клучен атрибут што зависи од друг не-клучен атрибут во истата релација.
+
+== **Проверка за БКНФ**
+
+Сите добиени релации се во БКНФ, бидејќи секој детерминант е кандидат-клуч во својата релација.
+
+Особено:
+
+- **`USERS`** ги задржува алтернативните клучеви `email` и `username`
+- **`TASK_DAILY_COMPLETION(task_id, daily_completion_id)`** е спојна релација без не-клучни атрибути
+- профилните релации со `user_id` се чисти 1:1 продолжувања на `USERS`
+
+== **Финален резултат и дискусија**
+
+== **Нормализиран релациски модел**
+
+Финалниот модел што го користиме во тековната имплементација е:
+
+- **`USERS`**
+- **`TRAINING_USERS`**
+- **`TRAINING_SESSIONS`**
+- **`INVESTOR_USERS`**
+- **`ASSETS`**
+- **`WEIGHT_USERS`**
+- **`DAILY_INTAKES`**
+- **`DISCIPLINE_USERS`**
+- **`CUSTOM_TRACKING_CATEGORIES`**
+- **`TASKS`**
+- **`DAILY_COMPLETION`**
+- **`TASK_DAILY_COMPLETION`**
+- **`FINANCE_USERS`**
+- **`INCOMES`**
+
+== **Дискусија**
+
+Разлики во однос на претходниот дизајн:
+
+- Се отстранети **`num_tasks`** и **`tasks`** од дисциплинските табели.
+- Се отстранета непотребната релација **`weight_user_id`** од `TRAINING_SESSIONS`.
+- Се задржуваат профилните табели со **`user_id`** како заеднички примарен и странски клуч.
+
+Одлука за следните фази:
+
+- **Овој нормализиран модел** останува извор на вистина.
+- **API форматот** може да остане стабилен, додека внатрешната шема е нормализирана.
+- **DDL и DML скриптите** треба да ја следат оваа шема.

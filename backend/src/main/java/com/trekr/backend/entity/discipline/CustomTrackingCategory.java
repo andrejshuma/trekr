@@ -27,12 +27,6 @@ public class CustomTrackingCategory {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "num_tasks")
-    private Integer numTasks;
-
-    @Column(name = "tasks")
-    private String tasks;
-
     public CustomTrackingCategory() {
     }
 
@@ -58,21 +52,5 @@ public class CustomTrackingCategory {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public Integer getNumTasks() {
-        return numTasks;
-    }
-
-    public void setNumTasks(Integer numTasks) {
-        this.numTasks = numTasks;
-    }
-
-    public String getTasks() {
-        return tasks;
-    }
-
-    public void setTasks(String tasks) {
-        this.tasks = tasks;
     }
 }

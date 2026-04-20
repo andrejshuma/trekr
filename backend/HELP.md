@@ -1,5 +1,9 @@
 # Getting Started
 
+### Project Documentation
+
+* [Normalization (Phase P5)](docs/Normalization.txt)
+
 ### Reference Documentation
 
 For further reference, please consider the following sections:
