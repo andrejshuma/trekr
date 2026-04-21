@@ -20,11 +20,28 @@ const Register = () => {
     e.preventDefault();
     setError("");
     setIsSubmitting(true);
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedUsername = username.trim();
+    const normalizedPassword = password;
+
+    if (normalizedUsername.length < 3 || normalizedUsername.length > 50) {
+      setError("Username must be between 3 and 50 characters");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (normalizedPassword.length < 6) {
+      setError("Password must be at least 6 characters");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const res = await api.post("/auth/register", {
-        email,
-        username,
-        password,
+        email: normalizedEmail,
+        username: normalizedUsername,
+        password: normalizedPassword,
       });
       localStorage.setItem("authToken", res.data.token);
       localStorage.setItem(
@@ -37,9 +54,11 @@ const Register = () => {
       );
       navigate("/dashboard");
     } catch (err) {
+      const fieldErrors = err?.response?.data?.errors ?? {};
+      const firstFieldError = Object.values(fieldErrors)[0];
       const message =
+        firstFieldError ||
         err?.response?.data?.message ||
-        Object.values(err?.response?.data?.errors ?? {})[0] ||
         "Registration failed";
       setError(message);
     } finally {
@@ -74,6 +93,8 @@ const Register = () => {
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           autoComplete="username"
+          minLength={3}
+          maxLength={50}
           required
         />
 
@@ -85,6 +106,7 @@ const Register = () => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
+          minLength={6}
           required
         />
 

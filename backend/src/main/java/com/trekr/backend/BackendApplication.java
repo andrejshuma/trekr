@@ -4,6 +4,10 @@ import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 @SpringBootApplication
 public class BackendApplication {
 
@@ -59,12 +63,17 @@ public class BackendApplication {
 
         for (String[] candidate : candidates) {
             try {
+                Path envPath = Paths.get(candidate[0], candidate[1]).normalize();
+                if (!Files.isRegularFile(envPath)) {
+                    continue;
+                }
+
                 Dotenv loaded = Dotenv.configure()
-                        .directory(candidate[0])
-                        .filename(candidate[1])
+                        .directory(envPath.getParent().toString())
+                        .filename(envPath.getFileName().toString())
                         .ignoreIfMissing()
                         .load();
-                if (loaded != null && !loaded.entries().isEmpty()) {
+                if (loaded != null) {
                     dotenv = loaded;
                     break;
                 }
