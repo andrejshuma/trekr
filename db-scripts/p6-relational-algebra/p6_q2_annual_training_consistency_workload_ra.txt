@@ -1,0 +1,52 @@
+TB <- pi_{tu.user_id, u.username, u.email, tu.gender, tu.age, tu.weight}
+      (training_users tu bowtie_{tu.user_id = u.user_id} users u)
+
+TBM <- TB x M
+TSY <- sigma_{YEAR(ts.date)=Y}(training_sessions ts)
+MS0 <- TBM leftouterjoin_{TBM.user_id = ts.training_user_id AND TBM.month_no = MONTH(ts.date)} TSY
+MS <- gamma_{user_id, month_no;
+             COUNT(ts.training_id)->sessions_count,
+             SUM(COALESCE(ts.duration,0))->total_duration_minutes,
+             SUM(COALESCE(ts.calories,0))->total_calories,
+             AVG(COALESCE(ts.duration,0))->avg_session_duration,
+             AVG(COALESCE(ts.calories,0))->avg_session_calories}(MS0)
+
+MR <- omega_{PARTITION BY user_id ORDER BY total_calories DESC, month_no ASC;
+             DENSE_RANK()->peak_calorie_month_rank,
+             DENSE_RANK(PARTITION BY user_id ORDER BY sessions_count DESC, month_no ASC)->peak_sessions_month_rank}(MS)
+
+AMS <- sigma_{sessions_count>0}(MS)
+AMS1 <- omega_{PARTITION BY user_id ORDER BY month_no;
+               ROW_NUMBER()->rn}(AMS)
+AMS2 <- alpha_{month_no - rn -> grp}(AMS1)
+LS0 <- gamma_{user_id, grp; COUNT(*)->streak_len}(AMS2)
+LS  <- gamma_{user_id; MAX(streak_len)->longest_active_month_streak}(LS0)
+
+AT <- gamma_{user_id;
+             SUM(sessions_count)->annual_sessions,
+             SUM(total_duration_minutes)->annual_duration_minutes,
+             SUM(total_calories)->annual_calories,
+             AVG(total_duration_minutes)->avg_monthly_duration,
+             AVG(total_calories)->avg_monthly_calories,
+             COUNT_IF(sessions_count>0)->active_months,
+             REGR_SLOPE(total_calories, month_no)->calories_trend_slope,
+             REGR_SLOPE(total_duration_minutes, month_no)->duration_trend_slope}(MS)
+
+PM <- gamma_{user_id;
+             MAX_IF(month_no, peak_calorie_month_rank=1)->peak_calorie_month_no,
+             MAX_IF(month_no, peak_sessions_month_rank=1)->peak_sessions_month_no}(MR)
+
+R0 <- TB bowtie_{TB.user_id=AT.user_id} AT
+         bowtie_{TB.user_id=PM.user_id} PM
+         leftouterjoin_{TB.user_id=LS.user_id} LS
+R1 <- alpha_{active_months/12.0->consistency_ratio,
+             COALESCE(longest_active_month_streak,0)->longest_active_month_streak_nz,
+             COALESCE(calories_trend_slope,0)->calories_trend_slope_nz,
+             COALESCE(duration_trend_slope,0)->duration_trend_slope_nz}(R0)
+R  <- omega_{ORDER BY annual_calories DESC,
+                    active_months DESC,
+                    longest_active_month_streak_nz DESC,
+                    user_id ASC;
+             DENSE_RANK()->training_annual_rank}(R1)
+
+

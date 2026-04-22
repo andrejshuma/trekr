@@ -1,0 +1,56 @@
+DB <- pi_{du.user_id, u.username, u.email}
+      (discipline_users du bowtie_{du.user_id = u.user_id} users u)
+
+TC <- tasks t leftouterjoin_{t.custom_tracking_id = c.custom_tracking_id} custom_tracking_categories c
+TM0 <- alpha_{COALESCE(t.discipline_user_id, c.user_id)->owner_user_id}(TC)
+TM1 <- sigma_{t.discipline_user_id IS NOT NULL OR t.custom_tracking_id IS NOT NULL}(TM0)
+TM <- gamma_{owner_user_id;
+             COUNT(*)->total_tasks_defined,
+             COUNT_IF(t.custom_tracking_id IS NULL)->core_tasks,
+             COUNT_IF(t.custom_tracking_id IS NOT NULL)->custom_tasks,
+             COUNT_DISTINCT(COALESCE(t.custom_tracking_id,'core'))->task_category_span}(TM1)
+
+ADC0 <- sigma_{YEAR(dc.date)=Y}(daily_completion dc)
+ADC <- alpha_{COALESCE(dc.procent,0)->procent,
+              CASE(procent>=80,1,0)->strong_day}(ADC0)
+
+DCS <- gamma_{user_id;
+              COUNT(*)->tracked_days,
+              AVG(procent)->avg_completion_percent,
+              PERCENTILE_CONT_0_5(procent)->median_completion_percent,
+              COUNT_IF(procent=100)->perfect_days,
+              COUNT_IF(procent>=80)->strong_days,
+              STDDEV_SAMP(procent)->completion_variability}(ADC)
+
+SDS0 <- sigma_{strong_day=1}(ADC)
+SDS1 <- omega_{PARTITION BY user_id ORDER BY date; ROW_NUMBER()->rn}(SDS0)
+SDS2 <- alpha_{date - rn -> grp}(SDS1)
+LSS0 <- gamma_{user_id, grp; COUNT(*)->streak_len}(SDS2)
+LSS  <- gamma_{user_id; MAX(streak_len)->longest_strong_day_streak}(LSS0)
+
+ATE0 <- ADC0 leftouterjoin_{ADC0.daily_completion_id = tdc.daily_completion_id} task_daily_completion tdc
+ATE  <- gamma_{ADC0.user_id; COUNT(tdc.task_id)->completed_task_events}(ATE0)
+
+R0 <- DB
+      leftouterjoin_{DB.user_id = TM.owner_user_id} TM
+      leftouterjoin_{DB.user_id = DCS.user_id} DCS
+      leftouterjoin_{DB.user_id = ATE.user_id} ATE
+      leftouterjoin_{DB.user_id = LSS.user_id} LSS
+R1 <- alpha_{COALESCE(total_tasks_defined,0)->total_tasks_defined_nz,
+             COALESCE(core_tasks,0)->core_tasks_nz,
+             COALESCE(custom_tasks,0)->custom_tasks_nz,
+             COALESCE(task_category_span,0)->task_category_span_nz,
+             COALESCE(tracked_days,0)->tracked_days_nz,
+             COALESCE(avg_completion_percent,0)->avg_completion_percent_nz,
+             COALESCE(median_completion_percent,0)->median_completion_percent_nz,
+             COALESCE(perfect_days,0)->perfect_days_nz,
+             COALESCE(strong_days,0)->strong_days_nz,
+             COALESCE(completion_variability,0)->completion_variability_nz,
+             COALESCE(completed_task_events,0)->completed_task_events_nz,
+             COALESCE(longest_strong_day_streak,0)->longest_strong_day_streak_nz,
+             COALESCE(strong_days/NULLIF(tracked_days,0),0)->strong_day_ratio,
+             (COALESCE(avg_completion_percent,0)*0.45 +
+              COALESCE(longest_strong_day_streak,0)*2.00 +
+              COALESCE(completed_task_events,0)*0.35)->discipline_composite_score}(R0)
+R  <- omega_{ORDER BY discipline_composite_score DESC, user_id ASC;
+             DENSE_RANK()->discipline_annual_rank}(R1)

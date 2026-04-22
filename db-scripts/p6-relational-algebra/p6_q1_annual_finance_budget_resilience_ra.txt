@@ -1,0 +1,42 @@
+FB <- pi_{fu.user_id, u.username, u.email,
+          COALESCE(fu.spending_budget,0)->spending_budget,
+          COALESCE(fu.saving_budget,0)->saving_budget,
+          COALESCE(fu.investing_budget,0)->investing_budget,
+          COALESCE(fu.donation_budget,0)->donation_budget,
+          COALESCE(fu.credit,0)->credit}
+      (finance_users fu bowtie_{fu.user_id = u.user_id} users u)
+
+FBM <- FB x M
+IY <- sigma_{YEAR(i.date)=Y}(incomes i)
+MI0 <- FBM leftouterjoin_{FBM.user_id = i.user_id AND FBM.month_no = MONTH(i.date)} IY
+MI <- gamma_{user_id, month_no;
+             SUM(COALESCE(i.amount,0))->month_income}(MI0)
+
+MIR <- omega_{PARTITION BY user_id ORDER BY month_income DESC, month_no ASC;
+              DENSE_RANK()->best_month_rank,
+              DENSE_RANK(PARTITION BY user_id ORDER BY month_income ASC, month_no ASC)->worst_month_rank}(MI)
+
+AI <- gamma_{user_id;
+             SUM(month_income)->total_income,
+             AVG(month_income)->avg_monthly_income,
+             STDDEV_SAMP(month_income)->income_stddev,
+             MAX(month_income)->best_month_income,
+             MIN(month_income)->worst_month_income,
+             COUNT_IF(month_income>0)->active_income_months}(MI)
+
+BWM <- gamma_{user_id;
+              MAX_IF(month_no, best_month_rank=1)->best_month_no,
+              MAX_IF(month_no, worst_month_rank=1)->worst_month_no}(MIR)
+
+R0 <- FB bowtie_{FB.user_id=AI.user_id} AI bowtie_{FB.user_id=BWM.user_id} BWM
+R1 <- alpha_{(spending_budget+saving_budget+investing_budget+donation_budget)*12->planned_annual_budget,
+             total_income->actual_annual_income,
+             income_stddev/NULLIF(avg_monthly_income,0)->income_volatility_cv,
+             total_income-(spending_budget*12)->annual_free_cash_after_spending,
+             (spending_budget*12)/NULLIF(total_income,0)->spending_pressure_ratio,
+             credit/NULLIF(total_income,0)->leverage_ratio}(R0)
+R  <- omega_{ORDER BY annual_free_cash_after_spending DESC,
+                    spending_pressure_ratio ASC,
+                    user_id ASC;
+             DENSE_RANK()->finance_resilience_rank}(R1)
+

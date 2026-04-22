@@ -1,0 +1,64 @@
+
+IB <- pi_{iu.user_id, u.username, u.email}
+      (investor_users iu bowtie_{iu.user_id = u.user_id} users u)
+
+AAL <- pi_{a.user_id, a.ticker_symbol,
+           COALESCE(a.quantity,0)->quantity,
+           COALESCE(a.buy_price,0)->buy_price,
+           COALESCE(a.quantity,0)*COALESCE(a.buy_price,0)->invested_amount,
+           a.buy_date}
+       (sigma_{YEAR(a.buy_date)=Y}(assets a))
+
+TR <- gamma_{user_id, ticker_symbol;
+             SUM(quantity)->total_quantity,
+             SUM(invested_amount)->total_invested_amount,
+             COUNT(*)->lot_count,
+             MIN(buy_date)->first_buy_date,
+             MAX(buy_date)->last_buy_date}(AAL)
+
+PT <- gamma_{user_id;
+             SUM(total_invested_amount)->annual_total_invested,
+             SUM(lot_count)->annual_lot_count,
+             COUNT(*)->distinct_tickers}(TR)
+
+W0 <- TR bowtie_{TR.user_id = PT.user_id} PT
+W1 <- alpha_{total_invested_amount/NULLIF(annual_total_invested,0)->position_weight}(W0)
+W  <- omega_{PARTITION BY user_id ORDER BY total_invested_amount DESC, ticker_symbol ASC;
+             DENSE_RANK()->position_rank}(W1)
+
+C <- gamma_{user_id;
+            SUM(position_weight*position_weight)->hhi_concentration,
+            MAX(position_weight)->top_position_weight,
+            MAX_IF(ticker_symbol, position_rank=1)->top_ticker}(W)
+
+IBM <- IB x M
+AY  <- sigma_{YEAR(a.buy_date)=Y}(assets a)
+MI0 <- IBM leftouterjoin_{IBM.user_id=a.user_id AND IBM.month_no=MONTH(a.buy_date)} AY
+MI  <- gamma_{user_id, month_no;
+              SUM(COALESCE(a.quantity,0)*COALESCE(a.buy_price,0))->monthly_invested_amount}(MI0)
+MS  <- gamma_{user_id;
+              AVG(monthly_invested_amount)->avg_monthly_contribution,
+              STDDEV_SAMP(monthly_invested_amount)->contribution_stddev,
+              COUNT_IF(monthly_invested_amount>0)->active_investing_months}(MI)
+
+R0 <- IB
+      leftouterjoin_{IB.user_id=PT.user_id} PT
+      leftouterjoin_{IB.user_id=C.user_id} C
+      leftouterjoin_{IB.user_id=MS.user_id} MS
+R1 <- alpha_{COALESCE(annual_total_invested,0)->annual_total_invested_nz,
+             COALESCE(annual_lot_count,0)->annual_lot_count_nz,
+             COALESCE(distinct_tickers,0)->distinct_tickers_nz,
+             COALESCE(avg_monthly_contribution,0)->avg_monthly_contribution_nz,
+             COALESCE(active_investing_months,0)->active_investing_months_nz,
+             COALESCE(active_investing_months,0)/12.0->activity_ratio,
+             COALESCE(hhi_concentration,0)->hhi_concentration_nz,
+             1-COALESCE(hhi_concentration,1)->diversification_index,
+             COALESCE(top_position_weight,0)->top_position_weight_nz,
+             COALESCE(contribution_stddev/NULLIF(avg_monthly_contribution,0),0)->contribution_volatility_cv}(R0)
+R  <- omega_{ORDER BY diversification_index DESC,
+                    annual_total_invested_nz DESC,
+                    active_investing_months_nz DESC,
+                    user_id ASC;
+             DENSE_RANK()->investing_annual_rank}(R1)
+
+
