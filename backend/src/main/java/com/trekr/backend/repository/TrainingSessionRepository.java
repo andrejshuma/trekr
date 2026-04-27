@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TrainingSessionRepository extends JpaRepository<TrainingSession, Long> {
     Page<TrainingSession> findByTrainingUser_UserIdOrderByDateDesc(Long userId, Pageable pageable);
+    java.util.List<TrainingSession> findByTrainingUser_UserIdAndDate(Long userId, java.time.LocalDate date);
 }

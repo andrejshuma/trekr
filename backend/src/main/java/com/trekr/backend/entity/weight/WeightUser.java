@@ -80,6 +80,7 @@ public class WeightUser {
         this.goalWeight = goalWeight;
     }
 
+
     public BigDecimal getGoalCalories() {
         return goalCalories;
     }
