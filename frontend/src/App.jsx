@@ -18,6 +18,7 @@ import Investing from "./pages/Dashboard/pages/Investing/Investing.jsx";
 import InvestingTracking from "./pages/Dashboard/pages/Investing/InvestingTracking.jsx";
 import NewInvestment from "./pages/Dashboard/pages/Investing/NewInvestment.jsx";
 import Discipline from "./pages/Dashboard/pages/Discipline/Discipline.jsx";
+import DisciplineTracking from "./pages/Dashboard/pages/Discipline/DisciplineTracking.jsx";
 
 function RequireAuth({ children }) {
   const token = localStorage.getItem("authToken");
@@ -58,6 +59,7 @@ function App() {
           <Route path="investing/tracking" element={<InvestingTracking />} />
           <Route path="investing/assets/new" element={<NewInvestment />} />
           <Route path="discipline" element={<Discipline />} />
+           <Route path="discipline/tracking" element={<DisciplineTracking />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
