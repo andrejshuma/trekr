@@ -12,6 +12,8 @@ import Weight from "./pages/Dashboard/pages/Weight/Weight.jsx";
 import WeightTracking from "./pages/Dashboard/pages/Weight/WeightTracking.jsx";
 import NewWeightIntake from "./pages/Dashboard/pages/Weight/NewWeightIntake.jsx";
 import Finance from "./pages/Dashboard/pages/Finance/Finance.jsx";
+import FinanceTracking from "./pages/Dashboard/pages/Finance/FinanceTracking.jsx";
+import NewIncome from "./pages/Dashboard/pages/Finance/NewIncome.jsx";
 import Investing from "./pages/Dashboard/pages/Investing/Investing.jsx";
 import InvestingTracking from "./pages/Dashboard/pages/Investing/InvestingTracking.jsx";
 import NewInvestment from "./pages/Dashboard/pages/Investing/NewInvestment.jsx";
@@ -50,6 +52,8 @@ function App() {
           <Route path="weight/tracking" element={<WeightTracking />} />
           <Route path="weight/intakes/new" element={<NewWeightIntake />} />
           <Route path="finance" element={<Finance />} />
+           <Route path="finance/tracking" element={<FinanceTracking />} />
+           <Route path="finance/incomes/new" element={<NewIncome />} />
           <Route path="investing" element={<Investing />} />
           <Route path="investing/tracking" element={<InvestingTracking />} />
           <Route path="investing/assets/new" element={<NewInvestment />} />
