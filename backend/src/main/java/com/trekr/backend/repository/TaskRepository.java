@@ -22,6 +22,12 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findByDisciplineUser_UserIdAndFinishedTrue(Long userId);
 
+    List<Task> findByCustomTrackingCategory_CustomTrackingIdAndCustomTrackingCategory_User_UserIdOrderByTaskIdDesc(
+            Long customTrackingId, Long userId);
+
+    int deleteByTaskIdAndCustomTrackingCategory_CustomTrackingIdAndCustomTrackingCategory_User_UserId(
+            Long taskId, Long customTrackingId, Long userId);
+
     @Modifying
     @Query("update Task t set t.finished = false where t.disciplineUser.userId = :userId")
     int resetFinishedForUser(@Param("userId") Long userId);

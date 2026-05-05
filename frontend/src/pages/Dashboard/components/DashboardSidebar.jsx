@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 
 import {
@@ -19,9 +19,21 @@ import {
   MdTrendingUp,
   MdChecklist,
   MdAdd,
+  MdBook,
+  MdFlag,
+  MdStar,
+  MdBolt,
+  MdNoteAlt,
+  MdAutoGraph,
 } from "react-icons/md";
 
 import logo from "../../../assets/logo.png";
+
+import AddCustomCategoryModal from "./AddCustomCategoryModal.jsx";
+import {
+  createCustomTrackingCategory,
+  getCustomTrackingCategories,
+} from "../../../api/discipline.js";
 
 const navItems = [
   { title: "Control Center", to: "/dashboard/control-center", icon: MdTune },
@@ -32,8 +44,47 @@ const navItems = [
   { title: "Discipline", to: "/dashboard/discipline", icon: MdChecklist },
 ];
 
+const CUSTOM_ICONS = [MdBook, MdFlag, MdStar, MdBolt, MdNoteAlt, MdAutoGraph];
+
+function stableIconForId(id) {
+  const n = Number(id);
+  if (!Number.isFinite(n)) return CUSTOM_ICONS[0];
+  return CUSTOM_ICONS[Math.abs(n) % CUSTOM_ICONS.length];
+}
+
 const DashboardSidebar = () => {
   const location = useLocation();
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customCategories, setCustomCategories] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await getCustomTrackingCategories();
+        const items = res?.items ?? [];
+        if (mounted) setCustomCategories(items);
+      } catch {
+        // If the user isn't authenticated yet or the endpoint fails,
+        // keep the sidebar usable (no custom categories).
+        if (mounted) setCustomCategories([]);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const customNavItems = useMemo(() => {
+    return (customCategories ?? []).map((c) => {
+      const Icon = stableIconForId(c.customTrackingId);
+      return {
+        title: c.name,
+        to: `/dashboard/custom/${c.customTrackingId}`,
+        icon: Icon,
+      };
+    });
+  }, [customCategories]);
 
   return (
     <Sidebar
@@ -86,6 +137,48 @@ const DashboardSidebar = () => {
               })()}
             </SidebarMenuItem>
           ))}
+
+          {customNavItems.length > 0 ? (
+            <div className="my-4 border-t border-white/10" />
+          ) : null}
+
+          {customNavItems.map((item) => (
+            <SidebarMenuItem key={`custom-${item.to}`}>
+              {(() => {
+                const isActive =
+                  location.pathname === item.to ||
+                  location.pathname.startsWith(`${item.to}/`);
+
+                return (
+                  <SidebarMenuButton
+                    asChild
+                    isActive={isActive}
+                    className={
+                      isActive
+                        ? "!bg-green-400 !text-black hover:!bg-green-400 active:!bg-green-400"
+                        : ""
+                    }
+                  >
+                    <NavLink
+                      to={item.to}
+                      className="flex w-full items-center gap-3"
+                    >
+                      <item.icon
+                        className={
+                          isActive
+                            ? "size-6 shrink-0 text-black"
+                            : "size-6 shrink-0"
+                        }
+                      />
+                      <span className={isActive ? "text-black" : ""}>
+                        {item.title}
+                      </span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                );
+              })()}
+            </SidebarMenuItem>
+          ))}
         </SidebarMenu>
 
         <div className="mt-6 px-2">
@@ -93,11 +186,21 @@ const DashboardSidebar = () => {
             variant="secondary"
             className="w-full justify-start gap-2 !bg-green-400 !text-black hover:!bg-green-500"
             type="button"
+            onClick={() => setCustomOpen(true)}
           >
             <MdAdd className="size-5" />
             <span>Add Custom</span>
           </Button>
         </div>
+
+        <AddCustomCategoryModal
+          open={customOpen}
+          onClose={() => setCustomOpen(false)}
+          onSubmit={async (payload) => {
+            const created = await createCustomTrackingCategory(payload);
+            setCustomCategories((prev) => [created, ...(prev ?? [])]);
+          }}
+        />
       </SidebarContent>
     </Sidebar>
   );

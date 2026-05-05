@@ -51,6 +51,7 @@ public class DisciplineService {
         this.userRepository = userRepository;
     }
 
+
     public boolean isTracking(Long userId) {
         return disciplineUserRepository.existsById(userId);
     }

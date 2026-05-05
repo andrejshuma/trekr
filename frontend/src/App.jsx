@@ -19,6 +19,7 @@ import InvestingTracking from "./pages/Dashboard/pages/Investing/InvestingTracki
 import NewInvestment from "./pages/Dashboard/pages/Investing/NewInvestment.jsx";
 import Discipline from "./pages/Dashboard/pages/Discipline/Discipline.jsx";
 import DisciplineTracking from "./pages/Dashboard/pages/Discipline/DisciplineTracking.jsx";
+import CustomCategoryKanban from "./pages/Dashboard/pages/CustomCategory/CustomCategoryKanban.jsx";
 
 function RequireAuth({ children }) {
   const token = localStorage.getItem("authToken");
@@ -60,6 +61,7 @@ function App() {
           <Route path="investing/assets/new" element={<NewInvestment />} />
           <Route path="discipline" element={<Discipline />} />
            <Route path="discipline/tracking" element={<DisciplineTracking />} />
+           <Route path="custom/:customTrackingId" element={<CustomCategoryKanban />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
