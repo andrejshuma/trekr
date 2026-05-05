@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../../api/axios";
-import graphPlaceholder from "../../../../assets/graph-placeholder.svg";
 
 import TrainingTrackingHeader from "./components/TrainingTrackingHeader.jsx";
 import TrainingProgressCard from "./components/TrainingProgressCard.jsx";
@@ -102,7 +101,7 @@ export default function TrainingTracking() {
       <TrainingTrackingHeader
         onAddSession={() => navigate("/dashboard/training/sessions/new")}
       />
-      <TrainingProgressCard graphSrc={graphPlaceholder} />
+      <TrainingProgressCard sessions={sessions} />
       <TrainingSessionsTable
         columns={columns}
         sessions={sessions}
