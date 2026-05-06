@@ -4,21 +4,36 @@ import TimeRangeToggle from "../../../../../components/graphs/TimeRangeToggle.js
 import PercentChangeAreaChart from "../../../../../components/graphs/PercentChangeAreaChart.jsx";
 import { percentChangeSeries, sumByTimeBucket } from "../../../../../utils/timeSeries.js";
 
-export default function InvestingProgressCard({ assets }) {
+export default function DisciplineProgressCard({ completions }) {
   const [range, setRange] = useState("weekly");
 
   const points = useMemo(() => {
-    // Option B: "net invested momentum".
-    // Since we only have assets (with buy date/price/quantity) and no transaction history,
-    // we treat each asset as a one-time investment at buyDate.
-    const buckets = sumByTimeBucket(
-      assets,
+    // Bucket daily completion percentages by time range.
+    // For weekly/monthly/yearly we compute the *average* completion % in that period.
+    const sums = sumByTimeBucket(
+      completions,
       range,
-      (a) => a.buyDate,
-      (a) => (Number(a?.quantity) || 0) * (Number(a?.buyPrice) || 0),
+      (c) => c.date,
+      (c) => Number(c?.procent) || 0,
     );
-    return percentChangeSeries(buckets);
-  }, [assets, range]);
+
+    const counts = sumByTimeBucket(
+      completions,
+      range,
+      (c) => c.date,
+      () => 1,
+    );
+
+    const countByTs = new Map(counts.map((p) => [p.ts, p.value]));
+
+    const avgPoints = sums.map((p) => {
+      const count = Number(countByTs.get(p.ts) ?? 0);
+      const avg = count > 0 ? Number(p.value ?? 0) / count : 0;
+      return { ts: p.ts, value: avg };
+    });
+
+    return percentChangeSeries(avgPoints);
+  }, [completions, range]);
 
   const latest = points?.length ? points[points.length - 1] : null;
   const latestPct = latest ? Number(latest.value ?? 0) : 0;
@@ -41,22 +56,23 @@ export default function InvestingProgressCard({ assets }) {
         <div className="mt-4 w-full overflow-hidden rounded-xl border border-base-300 bg-base-100 p-2">
           {points.length < 2 ? (
             <div className="flex h-65 items-center justify-center text-sm opacity-70">
-              Add at least 2 investments to see % change.
+              Add at least 2 daily completion records to see % change.
             </div>
           ) : (
             <PercentChangeAreaChart
               points={points}
               granularity={range}
               height={260}
-              positiveColor="#14b8a6"
+              positiveColor="#fbbf24"
             />
           )}
         </div>
 
         <div className="mt-2 text-xs opacity-70">
-          Showing percentage change in invested amount per {range} bucket. Latest bucket invested: {Math.round(latestBase)}.
+          Showing percentage change in average completion % per {range} bucket. Latest bucket avg: {Math.round(latestBase)}%.
         </div>
       </div>
     </div>
   );
 }
+

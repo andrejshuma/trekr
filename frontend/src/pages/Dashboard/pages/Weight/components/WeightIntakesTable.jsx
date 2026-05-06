@@ -135,14 +135,6 @@ export default function WeightIntakesTable({
         </div>
 
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <button
-            type="button"
-            className="btn bg-green-400! text-black! hover:bg-green-500! border-0"
-            onClick={onAddIntake}
-            disabled={isLoading}
-          >
-            + Add today's intake
-          </button>
 
           <button
             type="button"

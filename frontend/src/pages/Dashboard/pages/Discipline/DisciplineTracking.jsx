@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import graphPlaceholder from "../../../../assets/graph-placeholder.svg";
 
 import {
   createTask,
@@ -15,10 +14,12 @@ import {
 } from "../../../../api/dailyCompletion";
 
 import TaskList from "./components/TaskList.jsx";
+import DisciplineProgressCard from "./components/DisciplineProgressCard.jsx";
 
 export default function DisciplineTracking() {
   const pageSize = 50;
   const completionPageSize = 14;
+  const graphCompletionPageSize = 500;
 
   const todayIso = useMemo(() => {
     const d = new Date();
@@ -66,6 +67,25 @@ export default function DisciplineTracking() {
     };
   }, []);
 
+  const [graphCompletions, setGraphCompletions] = useState([]);
+
+  const fetchAllCompletionsForGraph = useCallback(async () => {
+    let p = 0;
+    let hasMorePages = true;
+    const all = [];
+
+    while (hasMorePages) {
+      const data = await getDailyCompletions({ page: p, size: graphCompletionPageSize });
+      const chunk = Array.isArray(data?.completions) ? data.completions : [];
+      all.push(...chunk);
+      hasMorePages = Boolean(data?.hasMore) && chunk.length > 0;
+      p += 1;
+      if (p > 400) break;
+    }
+
+    return all;
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -95,9 +115,13 @@ export default function DisciplineTracking() {
       try {
         setIsLoadingCompletions(true);
         setCompletionError("");
-        const { nextCompletions, nextHasMore } = await fetchCompletionsPage(0);
+        const [{ nextCompletions, nextHasMore }, allForGraph] = await Promise.all([
+          fetchCompletionsPage(0),
+          fetchAllCompletionsForGraph(),
+        ]);
         if (cancelled) return;
         setDailyCompletions(nextCompletions);
+        setGraphCompletions(allForGraph);
         setCompletionHasMore(nextHasMore);
         setCompletionPage(0);
       } catch (e) {
@@ -114,7 +138,7 @@ export default function DisciplineTracking() {
     return () => {
       cancelled = true;
     };
-  }, [fetchCompletionsPage]);
+  }, [fetchAllCompletionsForGraph, fetchCompletionsPage]);
 
   const onLoadMoreCompletions = async () => {
     if (isLoadingMoreCompletions || !completionHasMore) return;
@@ -239,6 +263,16 @@ export default function DisciplineTracking() {
         setDailyCompletions(nextCompletions);
         setCompletionHasMore(nextHasMore);
         setCompletionPage(0);
+
+        // also refresh graph dataset
+        try {
+          const allForGraph = await getDailyCompletions({ page: 0, size: 1000 });
+          setGraphCompletions(
+            Array.isArray(allForGraph?.completions) ? allForGraph.completions : [],
+          );
+        } catch {
+          // ignore
+        }
       } catch {
         // ignore
       }
@@ -315,19 +349,7 @@ export default function DisciplineTracking() {
             </button>
           ) : null}
 
-          <div className="card bg-base-200 border border-base-300">
-            <div className="card-body">
-              <h2 className="card-title">Progress</h2>
-              <p className="text-sm opacity-80">(Placeholder graph for now)</p>
-              <div className="mt-4">
-                <img
-                  src={graphPlaceholder}
-                  alt="Discipline graph placeholder"
-                  className="w-full"
-                />
-              </div>
-            </div>
-          </div>
+          <DisciplineProgressCard completions={graphCompletions} />
 
           <div className="card bg-base-200 border border-base-300">
             <div className="card-body">

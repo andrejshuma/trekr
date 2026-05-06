@@ -4,21 +4,18 @@ import TimeRangeToggle from "../../../../../components/graphs/TimeRangeToggle.js
 import PercentChangeAreaChart from "../../../../../components/graphs/PercentChangeAreaChart.jsx";
 import { percentChangeSeries, sumByTimeBucket } from "../../../../../utils/timeSeries.js";
 
-export default function InvestingProgressCard({ assets }) {
+export default function FinanceProgressCard({ incomes }) {
   const [range, setRange] = useState("weekly");
 
   const points = useMemo(() => {
-    // Option B: "net invested momentum".
-    // Since we only have assets (with buy date/price/quantity) and no transaction history,
-    // we treat each asset as a one-time investment at buyDate.
     const buckets = sumByTimeBucket(
-      assets,
+      incomes,
       range,
-      (a) => a.buyDate,
-      (a) => (Number(a?.quantity) || 0) * (Number(a?.buyPrice) || 0),
+      (i) => i.date,
+      (i) => i.amount,
     );
     return percentChangeSeries(buckets);
-  }, [assets, range]);
+  }, [incomes, range]);
 
   const latest = points?.length ? points[points.length - 1] : null;
   const latestPct = latest ? Number(latest.value ?? 0) : 0;
@@ -41,22 +38,23 @@ export default function InvestingProgressCard({ assets }) {
         <div className="mt-4 w-full overflow-hidden rounded-xl border border-base-300 bg-base-100 p-2">
           {points.length < 2 ? (
             <div className="flex h-65 items-center justify-center text-sm opacity-70">
-              Add at least 2 investments to see % change.
+              Add at least 2 incomes to see % change.
             </div>
           ) : (
             <PercentChangeAreaChart
               points={points}
               granularity={range}
               height={260}
-              positiveColor="#14b8a6"
+              positiveColor="#a855f7"
             />
           )}
         </div>
 
         <div className="mt-2 text-xs opacity-70">
-          Showing percentage change in invested amount per {range} bucket. Latest bucket invested: {Math.round(latestBase)}.
+          Showing percentage change in income totals per {range} bucket. Latest bucket total: {Math.round(latestBase)}.
         </div>
       </div>
     </div>
   );
 }
+

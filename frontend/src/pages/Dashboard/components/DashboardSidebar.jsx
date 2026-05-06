@@ -88,7 +88,7 @@ const DashboardSidebar = () => {
 
   return (
     <Sidebar
-      className="py-6"
+      className="py-6 border-r border-white/10 bg-base-100/60 backdrop-blur-xl"
       closeButtonClassName="fixed top-4 right-4"
       collapsible="none"
     >
@@ -113,8 +113,8 @@ const DashboardSidebar = () => {
                     isActive={isActive}
                     className={
                       isActive
-                        ? "!bg-green-400 !text-black hover:!bg-green-400 active:!bg-green-400"
-                        : ""
+                        ? "bg-green-400! text-black! hover:bg-green-400! active:bg-green-400!"
+                        : "hover:bg-white/10!"
                     }
                   >
                     <NavLink
@@ -155,8 +155,8 @@ const DashboardSidebar = () => {
                     isActive={isActive}
                     className={
                       isActive
-                        ? "!bg-green-400 !text-black hover:!bg-green-400 active:!bg-green-400"
-                        : ""
+                        ? "bg-green-400! text-black! hover:bg-green-400! active:bg-green-400!"
+                        : "hover:bg-white/10!"
                     }
                   >
                     <NavLink
@@ -184,7 +184,7 @@ const DashboardSidebar = () => {
         <div className="mt-6 px-2">
           <Button
             variant="secondary"
-            className="w-full justify-start gap-2 !bg-green-400 !text-black hover:!bg-green-500"
+            className="w-full justify-start gap-2 bg-green-400! text-black! hover:bg-green-500!"
             type="button"
             onClick={() => setCustomOpen(true)}
           >

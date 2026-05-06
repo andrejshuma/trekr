@@ -26,6 +26,7 @@ function titleCase(value) {
 export default function TrainingTracking() {
   const navigate = useNavigate();
   const pageSize = 5;
+  const graphPageSize = 500;
 
   const [sessions, setSessions] = useState([]);
   const [page, setPage] = useState(0);
@@ -44,9 +45,9 @@ export default function TrainingTracking() {
     [],
   );
 
-  const fetchPage = useCallback(async (nextPage) => {
+  const fetchPage = useCallback(async (nextPage, size = pageSize) => {
     const resp = await api.get("/training/sessions", {
-      params: { page: nextPage, size: pageSize },
+      params: { page: nextPage, size },
     });
     const data = resp?.data ?? {};
     const nextSessions = Array.isArray(data.sessions) ? data.sessions : [];
@@ -54,16 +55,39 @@ export default function TrainingTracking() {
     return { nextSessions, nextHasMore };
   }, []);
 
+  const fetchAllForGraph = useCallback(async () => {
+    let p = 0;
+    let hasMorePages = true;
+    const all = [];
+
+    while (hasMorePages) {
+      const { nextSessions, nextHasMore } = await fetchPage(p, graphPageSize);
+      all.push(...nextSessions);
+      hasMorePages = nextHasMore && nextSessions.length > 0;
+      p += 1;
+      // Basic safety to avoid accidental infinite loops if backend misbehaves.
+      if (p > 200) break;
+    }
+
+    return all;
+  }, [fetchPage]);
+
+  const [graphSessions, setGraphSessions] = useState([]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         setIsLoading(true);
         setError("");
-        const { nextSessions, nextHasMore } = await fetchPage(0);
+        const [tableFirstPage, allForGraph] = await Promise.all([
+          fetchPage(0, pageSize),
+          fetchAllForGraph(),
+        ]);
         if (cancelled) return;
-        setSessions(nextSessions);
-        setHasMore(nextHasMore);
+        setSessions(tableFirstPage.nextSessions);
+        setHasMore(tableFirstPage.nextHasMore);
+        setGraphSessions(allForGraph);
         setPage(0);
       } catch (e) {
         if (cancelled) return;
@@ -77,7 +101,7 @@ export default function TrainingTracking() {
     return () => {
       cancelled = true;
     };
-  }, [fetchPage]);
+  }, [fetchAllForGraph, fetchPage]);
 
   const onLoadMore = async () => {
     if (isLoadingMore || !hasMore) return;
@@ -101,7 +125,7 @@ export default function TrainingTracking() {
       <TrainingTrackingHeader
         onAddSession={() => navigate("/dashboard/training/sessions/new")}
       />
-      <TrainingProgressCard sessions={sessions} />
+      <TrainingProgressCard sessions={graphSessions} />
       <TrainingSessionsTable
         columns={columns}
         sessions={sessions}

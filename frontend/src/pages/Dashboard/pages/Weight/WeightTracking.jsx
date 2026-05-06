@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import api from "../../../../api/axios";
-import graphPlaceholder from "../../../../assets/graph-placeholder.svg";
 
 import WeightProgressCard from "./components/WeightProgressCard.jsx";
 import WeightTrackingHeader from "./components/WeightTrackingHeader.jsx";
@@ -36,6 +35,7 @@ function estimateGoalCalories(currentWeight, height, goalWeight) {
 export default function WeightTracking() {
   const navigate = useNavigate();
   const pageSize = 5;
+  const graphPageSize = 500;
 
   const [profile, setProfile] = useState(null);
   const [intakes, setIntakes] = useState([]);
@@ -52,11 +52,11 @@ export default function WeightTracking() {
   const [editError, setEditError] = useState("");
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
-  const fetchPage = useCallback(async (nextPage) => {
+  const fetchPage = useCallback(async (nextPage, size = pageSize) => {
     const [profileRes, intakesRes, trainingRes] = await Promise.all([
       api.get("/weight/profile"),
       api.get("/weight/intakes", {
-        params: { page: nextPage, size: pageSize },
+        params: { page: nextPage, size },
       }),
       api.get("/weight/today-training"),
     ]);
@@ -68,16 +68,39 @@ export default function WeightTracking() {
     };
   }, []);
 
+  const [graphIntakes, setGraphIntakes] = useState([]);
+
+  const fetchAllIntakesForGraph = useCallback(async () => {
+    let p = 0;
+    let hasMorePages = true;
+    const all = [];
+
+    while (hasMorePages) {
+      const { intakesData } = await fetchPage(p, graphPageSize);
+      const chunk = Array.isArray(intakesData.intakes) ? intakesData.intakes : [];
+      all.push(...chunk);
+      hasMorePages = Boolean(intakesData.hasMore) && chunk.length > 0;
+      p += 1;
+      if (p > 200) break;
+    }
+
+    return all;
+  }, [fetchPage]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         setIsLoading(true);
         setError("");
-        const { profileData, intakesData, trainingData } = await fetchPage(0);
+        const [{ profileData, intakesData, trainingData }, allIntakes] = await Promise.all([
+          fetchPage(0, pageSize),
+          fetchAllIntakesForGraph(),
+        ]);
         if (cancelled) return;
         setProfile(profileData);
         setIntakes(Array.isArray(intakesData.intakes) ? intakesData.intakes : []);
+        setGraphIntakes(allIntakes);
         setHasMore(Boolean(intakesData.hasMore));
         setHasTodayIntake(Boolean(intakesData.hasTodayIntake));
         setTodayTrainingInfo(trainingData);
@@ -99,7 +122,7 @@ export default function WeightTracking() {
     return () => {
       cancelled = true;
     };
-  }, [fetchPage, navigate]);
+  }, [fetchAllIntakesForGraph, fetchPage, navigate]);
 
   const onLoadMore = async () => {
     if (isLoadingMore || !hasMore) return;
@@ -212,7 +235,15 @@ export default function WeightTracking() {
         isTodayLogged={hasTodayIntake}
       />
 
-      <WeightProgressCard graphSrc={graphPlaceholder} />
+      <WeightProgressCard
+        intakes={graphIntakes}
+        goalCalories={goalCalories}
+        isBulking={
+          Number.isFinite(Number(profile?.weight)) && Number.isFinite(Number(profile?.goalWeight))
+            ? Number(profile.goalWeight) > Number(profile.weight)
+            : null
+        }
+      />
 
       <WeightIntakesTable
         intakes={intakes}

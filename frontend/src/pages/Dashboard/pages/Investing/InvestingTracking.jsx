@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import api from "../../../../api/axios";
-import graphPlaceholder from "../../../../assets/graph-placeholder.svg";
 import { fetchCurrentPricesBySymbol } from "../../../../api/twelveData";
 
 import InvestingTrackingHeader from "./components/InvestingTrackingHeader.jsx";
@@ -34,6 +33,7 @@ function formatMoney(value) {
 export default function InvestingTracking() {
   const navigate = useNavigate();
   const pageSize = 5;
+  const graphPageSize = 200;
 
   const [assets, setAssets] = useState([]);
   const [page, setPage] = useState(0);
@@ -61,9 +61,9 @@ export default function InvestingTracking() {
     [],
   );
 
-  const fetchPage = useCallback(async (nextPage) => {
+  const fetchPage = useCallback(async (nextPage, size = pageSize) => {
     const resp = await api.get("/investing/assets", {
-      params: { page: nextPage, size: pageSize },
+      params: { page: nextPage, size },
     });
     const data = resp?.data ?? {};
     const nextAssets = Array.isArray(data.assets) ? data.assets : [];
@@ -71,16 +71,38 @@ export default function InvestingTracking() {
     return { nextAssets, nextHasMore };
   }, []);
 
+  const [graphAssets, setGraphAssets] = useState([]);
+
+  const fetchAllAssetsForGraph = useCallback(async () => {
+    let p = 0;
+    let hasMorePages = true;
+    const all = [];
+
+    while (hasMorePages) {
+      const { nextAssets: chunk, nextHasMore } = await fetchPage(p, graphPageSize);
+      all.push(...chunk);
+      hasMorePages = nextHasMore && chunk.length > 0;
+      p += 1;
+      if (p > 200) break;
+    }
+
+    return all;
+  }, [fetchPage]);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         setIsLoading(true);
         setError("");
-        const { nextAssets, nextHasMore } = await fetchPage(0);
+        const [tableFirstPage, allForGraph] = await Promise.all([
+          fetchPage(0, pageSize),
+          fetchAllAssetsForGraph(),
+        ]);
         if (cancelled) return;
-        setAssets(nextAssets);
-        setHasMore(nextHasMore);
+        setAssets(tableFirstPage.nextAssets);
+        setHasMore(tableFirstPage.nextHasMore);
+        setGraphAssets(allForGraph);
         setPage(0);
       } catch (e) {
         if (cancelled) return;
@@ -92,7 +114,7 @@ export default function InvestingTracking() {
     return () => {
       cancelled = true;
     };
-  }, [fetchPage]);
+  }, [fetchAllAssetsForGraph, fetchPage]);
 
   const tickerSymbols = useMemo(() => {
     const set = new Set();
@@ -101,6 +123,8 @@ export default function InvestingTracking() {
     }
     return Array.from(set).sort();
   }, [assets]);
+
+  const tickerSymbolsKey = useMemo(() => tickerSymbols.join(","), [tickerSymbols]);
 
   useEffect(() => {
     if (tickerSymbols.length === 0) {
@@ -142,7 +166,7 @@ export default function InvestingTracking() {
       cancelled = true;
       if (intervalId) clearInterval(intervalId);
     };
-  }, [tickerSymbols.join(",")]);
+  }, [tickerSymbolsKey, tickerSymbols]);
 
   const onLoadMore = async () => {
     if (isLoadingMore || !hasMore) return;
@@ -189,7 +213,7 @@ export default function InvestingTracking() {
       <InvestingTrackingHeader
         onAddAsset={() => navigate("/dashboard/investing/assets/new")}
       />
-      <InvestingProgressCard graphSrc={graphPlaceholder} />
+      <InvestingProgressCard assets={graphAssets} />
 
       {quotesError ? (
         <div className="text-sm opacity-70">

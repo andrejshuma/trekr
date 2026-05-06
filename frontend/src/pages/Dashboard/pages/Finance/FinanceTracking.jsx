@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import graphPlaceholder from "../../../../assets/graph-placeholder.svg";
 import {
   getFinanceProfile,
   getIncomes,
@@ -11,6 +10,7 @@ import {
 import FinanceSummaryCard from "./components/FinanceSummaryCard.jsx";
 import FinanceIncomesTable from "./components/FinanceIncomesTable.jsx";
 import FinanceStartForm from "./components/FinanceStartForm.jsx";
+import FinanceProgressCard from "./components/FinanceProgressCard.jsx";
 
 function toNumber(value) {
   const n = Number(value);
@@ -20,6 +20,7 @@ function toNumber(value) {
 export default function FinanceTracking() {
   const navigate = useNavigate();
   const pageSize = 5;
+  const graphPageSize = 500;
 
   const [profile, setProfile] = useState(null);
   const [incomes, setIncomes] = useState([]);
@@ -75,6 +76,25 @@ export default function FinanceTracking() {
     };
   }, []);
 
+  const [graphIncomes, setGraphIncomes] = useState([]);
+
+  const fetchAllIncomesForGraph = useCallback(async () => {
+    let p = 0;
+    let hasMorePages = true;
+    const all = [];
+
+    while (hasMorePages) {
+      const data = await getIncomes({ page: p, size: graphPageSize });
+      const chunk = Array.isArray(data?.incomes) ? data.incomes : [];
+      all.push(...chunk);
+      hasMorePages = Boolean(data?.hasMore) && chunk.length > 0;
+      p += 1;
+      if (p > 200) break;
+    }
+
+    return all;
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -82,7 +102,11 @@ export default function FinanceTracking() {
         setIsLoading(true);
         setError("");
 
-        const [p, inc] = await Promise.all([getFinanceProfile(), fetchPage(0)]);
+        const [p, inc, allInc] = await Promise.all([
+          getFinanceProfile(),
+          fetchPage(0),
+          fetchAllIncomesForGraph(),
+        ]);
         if (cancelled) return;
         setProfile(p);
         setEditForm({
@@ -93,6 +117,7 @@ export default function FinanceTracking() {
           credit: p?.credit ?? "",
         });
         setIncomes(inc.nextIncomes);
+        setGraphIncomes(allInc);
         setHasMore(inc.nextHasMore);
         setPage(0);
       } catch (e) {
@@ -106,7 +131,7 @@ export default function FinanceTracking() {
     return () => {
       cancelled = true;
     };
-  }, [fetchPage]);
+  }, [fetchAllIncomesForGraph, fetchPage]);
 
   const onEdit = () => {
     setEditError("");
@@ -204,15 +229,7 @@ export default function FinanceTracking() {
         />
       )}
 
-      <div className="card bg-base-200 border border-base-300">
-        <div className="card-body">
-          <h2 className="card-title">Progress</h2>
-          <p className="text-sm opacity-80">(Placeholder graph for now)</p>
-          <div className="mt-4">
-            <img src={graphPlaceholder} alt="Finance graph placeholder" className="w-full" />
-          </div>
-        </div>
-      </div>
+      <FinanceProgressCard incomes={graphIncomes} />
 
       <FinanceIncomesTable
         incomes={incomes}
