@@ -35,6 +35,7 @@ public class CustomTrackingService {
         this.userRepository = userRepository;
     }
 
+    @Transactional(readOnly = true)
     public CustomTrackingCategoriesResponse getCustomTrackingCategories(Long userId) {
         List<CustomTrackingCategoryDto> items = customTrackingCategoryRepository
                 .findByUser_UserIdOrderByCustomTrackingIdDesc(userId)
@@ -71,6 +72,7 @@ public class CustomTrackingService {
         return new CustomTrackingCategoryDto(saved.getCustomTrackingId(), saved.getName());
     }
 
+    @Transactional(readOnly = true)
     public TasksResponse getCustomCategoryTasks(Long userId, Long customTrackingId) {
         requireOwnership(userId, customTrackingId);
 

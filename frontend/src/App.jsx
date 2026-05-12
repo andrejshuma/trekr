@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { clearAuthSession, getAuthToken, isTokenExpired } from "./utils/authSession";
 
 import LandingPage from "./pages/LandingPage/LandingPage.jsx";
 import Login from "./pages/Login/Login.jsx";
@@ -22,7 +23,11 @@ import DisciplineTracking from "./pages/Dashboard/pages/Discipline/DisciplineTra
 import CustomCategoryKanban from "./pages/Dashboard/pages/CustomCategory/CustomCategoryKanban.jsx";
 
 function RequireAuth({ children }) {
-  const token = localStorage.getItem("authToken");
+  const token = getAuthToken();
+  if (token && isTokenExpired(token)) {
+    clearAuthSession();
+    return <Navigate to="/login" replace />;
+  }
   if (!token) return <Navigate to="/login" replace />;
   return children;
 }

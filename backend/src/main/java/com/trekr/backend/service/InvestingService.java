@@ -52,6 +52,7 @@ public class InvestingService {
         investorUserRepository.save(investorUser);
     }
 
+    @Transactional(readOnly = true)
     public InvestingAssetsResponse getAssets(Long userId, int page, int size) {
         if (!investorUserRepository.existsById(userId)) {
             return new InvestingAssetsResponse(List.of(), false);

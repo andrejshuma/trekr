@@ -42,12 +42,12 @@ export const Benefits = () => {
 
   return (
     <section id="benefits" className="px-[5%] py-16 md:py-24 lg:py-28">
-      <div className="container">
+      <div className="mx-auto w-full max-w-6xl">
         <div className="text-center mb-16 md:mb-20">
           <p className="font-semibold text-sm md:text-base mb-3 md:mb-4">
             Why Trekr
           </p>
-          <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6">
+          <h2 className="font-bold mb-6 text-3xl sm:text-4xl md:text-5xl lg:text-6xl leading-tight">
             Designed for serious progress
           </h2>
           <p className="max-w-2xl mx-auto text-base md:text-lg opacity-80">

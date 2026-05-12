@@ -3,7 +3,7 @@ import logo from "../../../assets/logo.png";
 
 const Footer = () => {
   return (
-    <footer className="footer sm:footer-horizontal bg-neutral text-neutral-content p-10">
+    <footer className="footer sm:footer-horizontal bg-neutral text-neutral-content p-8 sm:p-10">
       <aside>
         <img src={logo} alt="Trekr" className="h-10 w-auto" />
         <p>Track self-improvement progress — in one place.</p>

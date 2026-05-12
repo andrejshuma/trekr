@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -107,6 +108,7 @@ public class TrainingService {
         trainingUserRepository.save(trainingUser);
     }
 
+    @Transactional(readOnly = true)
     public TrainingSessionsResponse getSessions(Long userId, int page, int size) {
         if (!trainingUserRepository.existsById(userId)) {
             return new TrainingSessionsResponse(List.of(), false);
@@ -133,6 +135,7 @@ public class TrainingService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public TrainingProfileResponse getProfile(Long userId) {
         TrainingUser trainingUser = trainingUserRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Training tracking is not enabled for this user"));
@@ -201,9 +204,8 @@ public class TrainingService {
         }
 
         String normalized = type.replace('_', '-');
-        return List.of(normalized.split("-"))
-                .stream()
-                .filter(part -> part != null && !part.isBlank())
+        return Arrays.stream(normalized.split("-"))
+                .filter(part -> !part.isBlank())
                 .map(part -> Character.toUpperCase(part.charAt(0)) + part.substring(1))
                 .collect(Collectors.joining(" "));
     }

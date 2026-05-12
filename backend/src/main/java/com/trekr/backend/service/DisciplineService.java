@@ -70,6 +70,7 @@ public class DisciplineService {
         disciplineUserRepository.save(disciplineUser);
     }
 
+    @Transactional(readOnly = true)
     public TasksResponse getTasks(Long userId, int page, int size) {
         if (!disciplineUserRepository.existsById(userId)) {
             return new TasksResponse(List.of(), false);
@@ -161,7 +162,6 @@ public class DisciplineService {
     /**
      * Computes the daily completion percentage for the given date:
      * finished_tasks / total_tasks * 100
-     *
      * - Persisted once per user+date. If already computed, it is not re-computed.
      * - After computing, all tasks for that user are reset to unfinished.
      */
@@ -209,14 +209,17 @@ public class DisciplineService {
         // Link all tasks that were finished at calculation time
         // (not strictly required for now, but matches schema and enables future analytics)
         if (finished > 0) {
-            List<Task> finishedTasks = taskRepository.findByDisciplineUser_UserIdAndFinishedTrue(userId);
-            for (Task t : finishedTasks) {
-                TaskDailyCompletion link = new TaskDailyCompletion();
-                link.setTask(t);
-                link.setDailyCompletion(savedCompletion);
-                link.setId(new TaskDailyCompletionId(t.getTaskId(), savedCompletion.getDailyCompletionId()));
-                taskDailyCompletionRepository.save(link);
-            }
+            List<TaskDailyCompletion> links = taskRepository.findByDisciplineUser_UserIdAndFinishedTrue(userId)
+                    .stream()
+                    .map(t -> {
+                        TaskDailyCompletion link = new TaskDailyCompletion();
+                        link.setTask(t);
+                        link.setDailyCompletion(savedCompletion);
+                        link.setId(new TaskDailyCompletionId(t.getTaskId(), savedCompletion.getDailyCompletionId()));
+                        return link;
+                    })
+                    .toList();
+            taskDailyCompletionRepository.saveAll(links);
         }
 
         // Reset all tasks for next day
@@ -227,6 +230,7 @@ public class DisciplineService {
         return new ComputeDailyCompletionResponse(true, dto);
     }
 
+    @Transactional(readOnly = true)
     public DailyCompletionsResponse getDailyCompletions(Long userId, int page, int size) {
         if (!disciplineUserRepository.existsById(userId)) {
             return new DailyCompletionsResponse(List.of(), false);

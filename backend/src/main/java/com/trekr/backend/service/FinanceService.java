@@ -68,6 +68,7 @@ public class FinanceService {
         financeUserRepository.save(financeUser);
     }
 
+    @Transactional(readOnly = true)
     public FinanceProfileResponse getProfile(Long userId) {
         FinanceUser financeUser = financeUserRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Finance tracking is not enabled for this user"));
@@ -80,6 +81,7 @@ public class FinanceService {
                 financeUser.getCredit());
     }
 
+    @Transactional(readOnly = true)
     public IncomesResponse getIncomes(Long userId, int page, int size) {
         if (!financeUserRepository.existsById(userId)) {
             return new IncomesResponse(List.of(), false);

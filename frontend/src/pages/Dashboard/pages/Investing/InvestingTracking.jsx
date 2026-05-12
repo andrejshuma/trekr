@@ -213,7 +213,7 @@ export default function InvestingTracking() {
       <InvestingTrackingHeader
         onAddAsset={() => navigate("/dashboard/investing/assets/new")}
       />
-      <InvestingProgressCard assets={graphAssets} />
+       <InvestingProgressCard assets={graphAssets} quotesBySymbol={quotesBySymbol} />
 
       {quotesError ? (
         <div className="text-sm opacity-70">

@@ -1,5 +1,5 @@
 import { Button } from "@relume_io/relume-ui";
-import { RxChevronRight } from "react-icons/rx";
+import { HowItWorksDefaults } from "./HowItWorks.defaults.jsx";
 
 export const HowItWorks = (props) => {
   const { tagline, heading, description, buttons, image } = {
@@ -8,14 +8,16 @@ export const HowItWorks = (props) => {
   };
   return (
     <section id="relume" className="px-[5%] py-16 md:py-24 lg:py-28">
-      <div className="container">
+      <div className="mx-auto w-full max-w-6xl">
         <div className="grid grid-cols-1 gap-y-12 md:grid-cols-2 md:items-center md:gap-x-12 lg:gap-x-20">
-          <div>
+          <div className="text-center md:text-left">
             <p className="mb-3 font-semibold md:mb-4">{tagline}</p>
-            <h1 className="rb-5 mb-5 text-5xl font-bold md:mb-6 md:text-7xl lg:text-8xl">
+            <h1 className="rb-5 mb-5 font-bold text-4xl sm:text-5xl md:mb-6 md:text-6xl lg:text-7xl leading-tight">
               {heading}
             </h1>
-            <p className="md:text-md">{description}</p>
+            <p className="text-sm sm:text-base md:text-lg opacity-80">
+              {description}
+            </p>
             <div className="mt-6 flex flex-wrap items-center gap-4 md:mt-8">
               {buttons.map((button, index) => (
                 <Button key={index} {...button}>
@@ -27,7 +29,7 @@ export const HowItWorks = (props) => {
           <div>
             <img
               src={image.src}
-              className="w-full object-cover"
+              className="w-full rounded-2xl object-cover"
               alt={image.alt}
             />
           </div>
@@ -37,22 +39,4 @@ export const HowItWorks = (props) => {
   );
 };
 
-export const HowItWorksDefaults = {
-  tagline: "How it works",
-  heading: "Log it. Track it. Improve it.",
-  description:
-    "Log what matters to your goals — workouts, weight/calories, budgets, investments, and daily tasks. Trekr gives you a clear view of trends over time so you can stay consistent and keep moving forward.",
-  buttons: [
-    { title: "Start free", variant: "secondary" },
-    {
-      title: "See a quick overview",
-      variant: "link",
-      size: "link",
-      iconRight: <RxChevronRight />,
-    },
-  ],
-  image: {
-    src: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=80",
-    alt: "Progress and goals overview on a laptop",
-  },
-};
+

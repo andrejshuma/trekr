@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider } from "@relume_io/relume-ui";
 
 import DashboardSidebar from "./components/DashboardSidebar.jsx";
 import DashboardTopbar from "./components/DashboardTopbar.jsx";
+import { clearAuthSession } from "../../utils/authSession";
 
 const DashboardLayout = () => {
   const navigate = useNavigate();
@@ -21,8 +22,7 @@ const DashboardLayout = () => {
   const username = user?.username ?? "";
 
   const onLogout = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("authUser");
+    clearAuthSession();
     navigate("/", { replace: true });
   };
 

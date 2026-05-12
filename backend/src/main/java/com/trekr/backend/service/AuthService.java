@@ -42,6 +42,7 @@ public class AuthService {
         return new AuthResponse(token, "Bearer", user.getUserId(), user.getUsername(), user.getEmail());
     }
 
+    @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         String usernameOrEmail = request.getUsernameOrEmail().trim();
         String emailLookup = usernameOrEmail.contains("@") ? usernameOrEmail.toLowerCase() : usernameOrEmail;

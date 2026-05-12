@@ -26,8 +26,8 @@ const NavbarLanding = () => {
   };
 
   return (
-    <div className="navbar bg-primary text-primary-content shadow-sm">
-      <div className="navbar-start">
+    <div className="navbar bg-primary text-primary-content shadow-sm px-4 sm:px-6">
+      <div className="navbar-start flex-1 min-w-0">
         <Link
           className="btn btn-ghost text-primary-content"
           aria-label="Trekr home"
@@ -36,17 +36,17 @@ const NavbarLanding = () => {
           <img src={logo} alt="Trekr" className="h-12 w-auto rounded-2xl" />
         </Link>
       </div>
-      <div className="navbar-end">
+      <div className="navbar-end flex-none">
         {isAuthed ? (
-          <div className="flex items-center gap-2 mr-6">
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
             <Link
-              className="btn btn-outline border-primary-content text-primary-content"
+              className="btn btn-sm sm:btn-md btn-outline border-primary-content text-primary-content"
               to="/dashboard"
             >
               Dashboard
             </Link>
             <button
-              className="btn btn-outline border-primary-content text-primary-content"
+              className="btn btn-sm sm:btn-md btn-outline border-primary-content text-primary-content"
               onClick={onLogout}
             >
               Logout
@@ -54,7 +54,7 @@ const NavbarLanding = () => {
           </div>
         ) : (
           <Link
-            className="btn btn-tertiary text-blue-200! px-8 mr-6"
+            className="btn btn-sm sm:btn-md btn-tertiary text-blue-200! px-6 sm:px-8"
             to="/login"
           >
             Start Tracking

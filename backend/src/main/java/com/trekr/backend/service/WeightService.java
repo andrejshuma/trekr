@@ -20,7 +20,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class WeightService {
@@ -72,6 +74,7 @@ public class WeightService {
         weightUserRepository.save(weightUser);
     }
 
+    @Transactional(readOnly = true)
     public WeightProfileResponse getProfile(Long userId) {
         WeightUser weightUser = weightUserRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Weight tracking is not enabled for this user"));
@@ -83,6 +86,7 @@ public class WeightService {
                 weightUser.getGoalCalories());
     }
 
+    @Transactional(readOnly = true)
     public WeightDailyIntakesResponse getDailyIntakes(Long userId, int page, int size) {
         if (!weightUserRepository.existsById(userId)) {
             return new WeightDailyIntakesResponse(List.of(), false, false);
@@ -91,16 +95,28 @@ public class WeightService {
         Page<DailyIntake> result = dailyIntakeRepository
                 .findByWeightUser_UserIdOrderByDateDesc(userId, PageRequest.of(page, size));
 
+        List<LocalDate> dates = result.getContent().stream()
+                .map(DailyIntake::getDate)
+                .distinct()
+                .toList();
+
+        Map<LocalDate, Integer> trainingCountsByDate = new HashMap<>();
+        Map<LocalDate, BigDecimal> burnedCaloriesByDate = new HashMap<>();
+        if (!dates.isEmpty()) {
+            trainingSessionRepository.findByTrainingUser_UserIdAndDateIn(userId, dates).forEach(session -> {
+                LocalDate sessionDate = session.getDate();
+                trainingCountsByDate.merge(sessionDate, 1, Integer::sum);
+                BigDecimal calories = session.getCalories() != null ? session.getCalories() : BigDecimal.ZERO;
+                burnedCaloriesByDate.merge(sessionDate, calories, BigDecimal::add);
+            });
+        }
+
         List<WeightDailyIntakeDto> intakes = result.getContent().stream()
                 .map(d -> {
-                    // Fetch training data for this date
-                    var trainingSessions = trainingSessionRepository.findByTrainingUser_UserIdAndDate(userId, d.getDate());
-                    boolean trainedThatDay = !trainingSessions.isEmpty();
-                    BigDecimal burnedCalories = trainingSessions.stream()
-                            .map(ts -> ts.getCalories() != null ? ts.getCalories() : BigDecimal.ZERO)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add)
+                    boolean trainedThatDay = trainingCountsByDate.getOrDefault(d.getDate(), 0) > 0;
+                    BigDecimal burnedCalories = burnedCaloriesByDate.getOrDefault(d.getDate(), BigDecimal.ZERO)
                             .setScale(2, java.math.RoundingMode.HALF_UP);
-                    
+
                     return new WeightDailyIntakeDto(
                             d.getDailyIntakeId(),
                             d.getDate(),
@@ -142,7 +158,6 @@ public class WeightService {
         return new WeightDailyIntakeDto(saved.getDailyIntakeId(), saved.getDate(), saved.getCalories(), trainedToday, burnedCalories);
     }
 
-    @Transactional
     public WeightProfileResponse updateProfile(Long userId, WeightStartRequest request) {
         WeightUser weightUser = weightUserRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Weight tracking is not enabled for this user"));
@@ -162,6 +177,7 @@ public class WeightService {
                 updated.getGoalCalories());
     }
 
+    @Transactional(readOnly = true)
     public TodayTrainingInfoDto getTodayTrainingInfo(Long userId) {
         // Try to get training user, if doesn't exist just return zeros
         var trainingUser = trainingSessionRepository.findByTrainingUser_UserIdAndDate(userId, LocalDate.now());
