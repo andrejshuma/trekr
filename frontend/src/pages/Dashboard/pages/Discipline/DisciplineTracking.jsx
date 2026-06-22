@@ -292,6 +292,7 @@ export default function DisciplineTracking() {
   };
 
   const isTodayClosed = useMemo(() => {
+    console.log('todayIso:', todayIso);
     return (dailyCompletions ?? []).some((dc) => dc?.date === todayIso);
   }, [dailyCompletions, todayIso]);
 

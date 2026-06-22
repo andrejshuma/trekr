@@ -17,6 +17,7 @@ const NewTrainingSession = () => {
   const [durationMinutes, setDurationMinutes] = useState("");
   const [autoCalculateCalories, setAutoCalculateCalories] = useState(true);
   const [calories, setCalories] = useState("");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -94,6 +95,13 @@ const NewTrainingSession = () => {
       return;
     }
 
+    // Date must not be in the future (allow past or today)
+    const todayStr = new Date().toISOString().slice(0, 10);
+    if (!date || date > todayStr) {
+      setError("Date cannot be in the future.");
+      return;
+    }
+
     const caloriesNum = calories === "" ? NaN : Number(calories);
     if (!autoCalculateCalories) {
       if (!Number.isFinite(caloriesNum) || caloriesNum < 0) {
@@ -107,6 +115,7 @@ const NewTrainingSession = () => {
       await api.post("/training/sessions", {
         type,
         durationMinutes: durationNum,
+        date,
         autoCalculateCalories,
         calories: autoCalculateCalories ? null : caloriesNum,
       });
@@ -144,7 +153,7 @@ const NewTrainingSession = () => {
             <p className="opacity-80 mt-2">Loading workout types…</p>
           ) : null}
 
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
             <WorkoutTypeSelect
               workoutTypes={workoutTypes}
               value={type}
@@ -164,6 +173,20 @@ const NewTrainingSession = () => {
                 required
                 disabled={isLoading}
               />
+            </div>
+
+            <div>
+              <label className="label">Date</label>
+              <input
+                type="date"
+                className="input input-bordered w-full"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
+                required
+                disabled={isLoading}
+              />
+              <p className="text-xs opacity-70 mt-1">Choose a past date or today (no future dates).</p>
             </div>
           </div>
 

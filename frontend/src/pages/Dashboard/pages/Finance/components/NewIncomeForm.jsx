@@ -3,6 +3,7 @@ import React, { useState } from "react";
 export default function NewIncomeForm({ onSubmit, onCancel, error, isSubmitting }) {
   const [date, setDate] = useState(() => {
     const d = new Date();
+    console.log('Date:', d);
     return d.toISOString().slice(0, 10);
   });
   const [amount, setAmount] = useState("");

@@ -176,7 +176,15 @@ public class TrainingService {
         session.setType(type);
         session.setDuration(durationMinutes);
         session.setCalories(calories);
-        session.setDate(LocalDate.now());
+        // Allow client to supply a date (past or present). If not provided, use today.
+        java.time.LocalDate suppliedDate = request.getDate();
+        if (suppliedDate == null) {
+            suppliedDate = LocalDate.now();
+        }
+        if (suppliedDate.isAfter(LocalDate.now())) {
+            throw new RuntimeException("Date cannot be in the future");
+        }
+        session.setDate(suppliedDate);
 
         TrainingSession saved = trainingSessionRepository.save(session);
 
