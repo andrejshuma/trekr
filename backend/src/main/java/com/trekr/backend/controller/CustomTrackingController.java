@@ -8,6 +8,7 @@ import com.trekr.backend.dto.discipline.TaskDto;
 import com.trekr.backend.dto.discipline.TasksResponse;
 import com.trekr.backend.dto.discipline.UpdateTaskFinishedRequest;
 import com.trekr.backend.dto.discipline.UpdateTaskRequest;
+import com.trekr.backend.dto.discipline.UpdateTaskStatusRequest;
 import com.trekr.backend.security.UserPrincipal;
 import com.trekr.backend.service.CustomTrackingService;
 import jakarta.validation.Valid;
@@ -76,6 +77,16 @@ public class CustomTrackingController {
             Authentication authentication) {
         UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
         return customTrackingService.updateCustomCategoryTaskFinished(principal.getUserId(), customTrackingId, taskId, request);
+    }
+
+    @PatchMapping("/{customTrackingId}/tasks/{taskId}/status")
+    public TaskDto updateTaskStatus(
+            @PathVariable Long customTrackingId,
+            @PathVariable Long taskId,
+            @RequestBody UpdateTaskStatusRequest request,
+            Authentication authentication) {
+        UserPrincipal principal = (UserPrincipal) authentication.getPrincipal();
+        return customTrackingService.updateCustomCategoryTaskStatus(principal.getUserId(), customTrackingId, taskId, request);
     }
 
     @DeleteMapping("/{customTrackingId}/tasks/{taskId}")

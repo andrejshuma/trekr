@@ -1,37 +1,41 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MdDelete, MdDragIndicator, MdEdit, MdSave } from "react-icons/md";
+import { MdDelete, MdDragIndicator, MdEdit, MdCalendarToday } from "react-icons/md";
+
+const PRIORITY_STYLES = {
+  HIGH:   "bg-red-500/15 text-red-300 border-red-500/30",
+  MEDIUM: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+  LOW:    "bg-sky-500/15 text-sky-300 border-sky-500/30",
+};
+
+const STATUS_DOT = {
+  NOT_STARTED: "bg-slate-400",
+  IN_PROGRESS: "bg-amber-400",
+  FINISHED:    "bg-emerald-400",
+};
+
+function formatDate(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function isOverdue(dateStr) {
+  if (!dateStr) return false;
+  return new Date(dateStr) < new Date(new Date().toDateString());
+}
 
 export default function TaskTicketCard({ task, onEdit, onDelete }) {
   const id = String(task.taskId);
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+
+  const style = useMemo(() => ({
+    transform: CSS.Transform.toString(transform),
     transition,
-    isDragging,
-  } = useSortable({ id });
+  }), [transform, transition]);
 
-  const style = useMemo(
-    () => ({
-      transform: CSS.Transform.toString(transform),
-      transition,
-    }),
-    [transform, transition]
-  );
-
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(task.name ?? "");
-
-  async function submitEdit(e) {
-    e.preventDefault();
-    const next = draft.trim();
-    if (!next) return;
-    await onEdit(next);
-    setEditing(false);
-  }
+  const overdue = task.status !== "FINISHED" && isOverdue(task.dueDate);
 
   return (
     <div
@@ -39,82 +43,69 @@ export default function TaskTicketCard({ task, onEdit, onDelete }) {
       style={style}
       className={
         "group rounded-lg border border-white/10 bg-black/30 p-3 shadow-sm transition hover:border-white/20 hover:bg-black/35 " +
-        (task.isFinished ? "opacity-90" : "") +
-        (isDragging ? " opacity-60" : "")
+        (task.status === "FINISHED" ? "opacity-80" : "") +
+        (isDragging ? " opacity-50 scale-95" : "")
       }
     >
-      <div className="flex items-start justify-between gap-3">
+      {/* Header row */}
+      <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          {editing ? (
-            <form onSubmit={submitEdit} className="flex gap-2">
-              <input
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                maxLength={200}
-                className="w-full rounded-md border border-white/10 bg-black/40 px-2 py-1 text-sm outline-none focus:border-green-400"
-                autoFocus
-              />
-              <button
-                type="submit"
-                className="inline-flex items-center gap-1 rounded-md bg-green-400 px-2 py-1 text-sm font-medium text-black"
-              >
-                <MdSave className="size-4" />
-                Save
-              </button>
-            </form>
-          ) : (
-            <div className="flex items-center gap-2">
-              <span
-                className={
-                  "h-2 w-2 shrink-0 rounded-full " +
-                  (task.isFinished ? "bg-emerald-400" : "bg-sky-400")
-                }
-              />
-              <div className="min-w-0 text-sm font-medium text-white/90">
-                {task.name}
-              </div>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <span className={"h-2 w-2 shrink-0 rounded-full " + (STATUS_DOT[task.status] ?? "bg-slate-400")} />
+            <span className="text-sm font-medium text-white/90 leading-snug">{task.name}</span>
+          </div>
 
-          <div className="mt-1 text-xs text-white/50">Ticket #{task.taskId}</div>
+          {task.description ? (
+            <p className="mt-1.5 text-xs text-white/50 line-clamp-2">{task.description}</p>
+          ) : null}
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          {!editing ? (
-            <button
-              type="button"
-              onClick={() => {
-                setDraft(task.name ?? "");
-                setEditing(true);
-              }}
-              className="rounded-md p-1 text-white/70 hover:bg-white/10 hover:text-white"
-              title="Edit"
-            >
-              <MdEdit className="size-5" />
-            </button>
-          ) : null}
-
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            onClick={onEdit}
+            className="rounded-md p-1 text-white/50 hover:bg-white/10 hover:text-white"
+            title="Edit"
+          >
+            <MdEdit className="size-4" />
+          </button>
           <button
             type="button"
             onClick={onDelete}
-            className="rounded-md p-1 text-white/70 hover:bg-white/10 hover:text-white"
+            className="rounded-md p-1 text-white/50 hover:bg-white/10 hover:text-white"
             title="Delete"
           >
-            <MdDelete className="size-5" />
+            <MdDelete className="size-4" />
           </button>
-
           <button
             type="button"
-            className="inline-flex cursor-grab items-center gap-1 rounded-md p-1 text-white/70 hover:bg-white/10 hover:text-white active:cursor-grabbing"
+            className="cursor-grab rounded-md p-1 text-white/50 hover:bg-white/10 hover:text-white active:cursor-grabbing"
             title="Drag"
             {...attributes}
             {...listeners}
           >
-            <MdDragIndicator className="size-5" />
+            <MdDragIndicator className="size-4" />
           </button>
         </div>
+      </div>
+
+      {/* Footer row: priority + due date */}
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <span className="text-xs text-white/30">#{task.taskId}</span>
+
+        {task.priority ? (
+          <span className={"rounded-full border px-2 py-0.5 text-xs font-medium " + (PRIORITY_STYLES[task.priority] ?? PRIORITY_STYLES.LOW)}>
+            {task.priority.charAt(0) + task.priority.slice(1).toLowerCase()}
+          </span>
+        ) : null}
+
+        {task.dueDate ? (
+          <span className={"flex items-center gap-1 text-xs " + (overdue ? "text-red-400" : "text-white/40")}>
+            <MdCalendarToday className="size-3" />
+            {overdue ? "Overdue · " : ""}{formatDate(task.dueDate)}
+          </span>
+        ) : null}
       </div>
     </div>
   );
 }
-

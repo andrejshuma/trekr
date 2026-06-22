@@ -7,7 +7,7 @@ import {
   getCustomCategoryTasks,
   getCustomTrackingCategories,
   updateCustomCategoryTask,
-  updateCustomCategoryTaskFinished,
+  updateCustomCategoryTaskStatus,
 } from "../../../../api/discipline.js";
 
 import CustomCategoryKanbanBoard from "./components/CustomCategoryKanbanBoard";
@@ -22,9 +22,12 @@ export default function CustomCategoryKanban() {
   const [error, setError] = useState(null);
 
   const lanes = useMemo(() => {
-    const notDone = (tasks ?? []).filter((t) => !t.isFinished);
-    const done = (tasks ?? []).filter((t) => t.isFinished);
-    return { notDone, done };
+    const all = tasks ?? [];
+    return {
+      notStarted: all.filter((t) => t.status === "NOT_STARTED"),
+      inProgress: all.filter((t) => t.status === "IN_PROGRESS"),
+      finished: all.filter((t) => t.status === "FINISHED"),
+    };
   }, [tasks]);
 
   async function refresh() {
@@ -35,11 +38,9 @@ export default function CustomCategoryKanban() {
         getCustomTrackingCategories(),
         getCustomCategoryTasks(customTrackingId),
       ]);
-
       const cats = catsRes?.items ?? [];
       const found = cats.find((c) => Number(c.customTrackingId) === customTrackingId);
       setCategoryName(found?.name ?? "Custom Category");
-
       setTasks(tasksRes?.tasks ?? []);
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Failed to load category");
@@ -58,13 +59,13 @@ export default function CustomCategoryKanban() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customTrackingId]);
 
-  async function handleAddTask(name) {
-    const created = await createCustomCategoryTask(customTrackingId, { name });
+  async function handleAddTask(payload) {
+    const created = await createCustomCategoryTask(customTrackingId, payload);
     setTasks((prev) => [created, ...(prev ?? [])]);
   }
 
-  async function handleEditTask(taskId, name) {
-    const updated = await updateCustomCategoryTask(customTrackingId, taskId, { name });
+  async function handleEditTask(taskId, payload) {
+    const updated = await updateCustomCategoryTask(customTrackingId, taskId, payload);
     setTasks((prev) => (prev ?? []).map((t) => (t.taskId === taskId ? updated : t)));
   }
 
@@ -73,25 +74,15 @@ export default function CustomCategoryKanban() {
     setTasks((prev) => (prev ?? []).filter((t) => t.taskId !== taskId));
   }
 
-  async function handleMoveTask(taskId, toFinished) {
-    // optimistic update
+  async function handleMoveTask(taskId, toStatus) {
     setTasks((prev) =>
-      (prev ?? []).map((t) =>
-        t.taskId === taskId ? { ...t, isFinished: toFinished } : t
-      )
+      (prev ?? []).map((t) => (t.taskId === taskId ? { ...t, status: toStatus } : t))
     );
-
     try {
-      const saved = await updateCustomCategoryTaskFinished(
-        customTrackingId,
-        taskId,
-        toFinished
-      );
+      const saved = await updateCustomCategoryTaskStatus(customTrackingId, taskId, toStatus);
       setTasks((prev) => (prev ?? []).map((t) => (t.taskId === taskId ? saved : t)));
-    } catch (e) {
-      // revert by refetching (simple + correct)
+    } catch {
       await refresh();
-      throw e;
     }
   }
 
@@ -101,7 +92,7 @@ export default function CustomCategoryKanban() {
         <div>
           <h1 className="text-2xl font-bold">{categoryName}</h1>
           <p className="text-sm opacity-80">
-            Drag tickets between columns to mark them done / not done.
+            Drag tickets between columns or use the edit form to update status.
           </p>
         </div>
       </div>
@@ -114,8 +105,9 @@ export default function CustomCategoryKanban() {
 
       <CustomCategoryKanbanBoard
         loading={loading}
-        notDone={lanes.notDone}
-        done={lanes.done}
+        notStarted={lanes.notStarted}
+        inProgress={lanes.inProgress}
+        finished={lanes.finished}
         onAddTask={handleAddTask}
         onEditTask={handleEditTask}
         onDeleteTask={handleDeleteTask}
@@ -124,5 +116,3 @@ export default function CustomCategoryKanban() {
     </div>
   );
 }
-
-

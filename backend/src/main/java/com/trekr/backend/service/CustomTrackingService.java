@@ -7,6 +7,8 @@ import com.trekr.backend.dto.discipline.CustomTrackingCategoryDto;
 import com.trekr.backend.dto.discipline.TaskDto;
 import com.trekr.backend.dto.discipline.TasksResponse;
 import com.trekr.backend.dto.discipline.UpdateTaskFinishedRequest;
+import com.trekr.backend.dto.discipline.UpdateTaskStatusRequest;
+import com.trekr.backend.entity.discipline.TaskStatus;
 import com.trekr.backend.dto.discipline.UpdateTaskRequest;
 import com.trekr.backend.entity.User;
 import com.trekr.backend.entity.discipline.CustomTrackingCategory;
@@ -80,7 +82,7 @@ public class CustomTrackingService {
                 .findByCustomTrackingCategory_CustomTrackingIdAndCustomTrackingCategory_User_UserIdOrderByTaskIdDesc(
                         customTrackingId, userId)
                 .stream()
-                .map(t -> new TaskDto(t.getTaskId(), t.getName(), t.isFinished()))
+                .map(t -> new TaskDto(t.getTaskId(), t.getName(), t.isFinished(), t.getStatus(), t.getDescription(), t.getDueDate(), t.getPriority()))
                 .toList();
 
         return new TasksResponse(tasks, false);
@@ -100,12 +102,15 @@ public class CustomTrackingService {
 
         Task task = new Task();
         task.setName(name.trim());
-        task.setFinished(false);
+        task.setStatus(TaskStatus.NOT_STARTED);
+        task.setDescription(request.getDescription());
+        task.setDueDate(request.getDueDate());
+        task.setPriority(request.getPriority());
         task.setDisciplineUser(null);
         task.setCustomTrackingCategory(category);
 
         Task saved = taskRepository.save(task);
-        return new TaskDto(saved.getTaskId(), saved.getName(), saved.isFinished());
+        return new TaskDto(saved.getTaskId(), saved.getName(), saved.isFinished(), saved.getStatus(), saved.getDescription(), saved.getDueDate(), saved.getPriority());
     }
 
     @Transactional
@@ -126,8 +131,14 @@ public class CustomTrackingService {
         }
 
         task.setName(name.trim());
+        task.setDescription(request.getDescription());
+        task.setDueDate(request.getDueDate());
+        task.setPriority(request.getPriority());
+        if (request.getStatus() != null) {
+            task.setStatus(request.getStatus());
+        }
         Task saved = taskRepository.save(task);
-        return new TaskDto(saved.getTaskId(), saved.getName(), saved.isFinished());
+        return new TaskDto(saved.getTaskId(), saved.getName(), saved.isFinished(), saved.getStatus(), saved.getDescription(), saved.getDueDate(), saved.getPriority());
     }
 
     @Transactional
@@ -150,7 +161,29 @@ public class CustomTrackingService {
 
         task.setFinished(finished);
         Task saved = taskRepository.save(task);
-        return new TaskDto(saved.getTaskId(), saved.getName(), saved.isFinished());
+        return new TaskDto(saved.getTaskId(), saved.getName(), saved.isFinished(), saved.getStatus(), saved.getDescription(), saved.getDueDate(), saved.getPriority());
+    }
+
+    @Transactional
+    public TaskDto updateCustomCategoryTaskStatus(Long userId, Long customTrackingId, Long taskId,
+                                                  UpdateTaskStatusRequest request) {
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        if (task.getCustomTrackingCategory() == null
+                || !customTrackingId.equals(task.getCustomTrackingCategory().getCustomTrackingId())
+                || task.getCustomTrackingCategory().getUser() == null
+                || !userId.equals(task.getCustomTrackingCategory().getUser().getUserId())) {
+            throw new RuntimeException("Task not found");
+        }
+
+        if (request.getStatus() == null) {
+            throw new RuntimeException("status is required");
+        }
+
+        task.setStatus(request.getStatus());
+        Task saved = taskRepository.save(task);
+        return new TaskDto(saved.getTaskId(), saved.getName(), saved.isFinished(), saved.getStatus(), saved.getDescription(), saved.getDueDate(), saved.getPriority());
     }
 
     @Transactional

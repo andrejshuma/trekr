@@ -1,6 +1,7 @@
 package com.trekr.backend.repository;
 
 import com.trekr.backend.entity.discipline.Task;
+import com.trekr.backend.entity.discipline.TaskStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,9 +19,9 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     long countByDisciplineUser_UserId(Long userId);
 
-    long countByDisciplineUser_UserIdAndFinishedTrue(Long userId);
+    long countByDisciplineUser_UserIdAndStatus(Long userId, TaskStatus status);
 
-    List<Task> findByDisciplineUser_UserIdAndFinishedTrue(Long userId);
+    List<Task> findByDisciplineUser_UserIdAndStatus(Long userId, TaskStatus status);
 
     List<Task> findByCustomTrackingCategory_CustomTrackingIdAndCustomTrackingCategory_User_UserIdOrderByTaskIdDesc(
             Long customTrackingId, Long userId);
@@ -29,7 +30,6 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             Long taskId, Long customTrackingId, Long userId);
 
     @Modifying
-    @Query("update Task t set t.finished = false where t.disciplineUser.userId = :userId")
-    int resetFinishedForUser(@Param("userId") Long userId);
+    @Query("update Task t set t.status = :status where t.disciplineUser.userId = :userId")
+    int resetStatusForUser(@Param("userId") Long userId, @Param("status") TaskStatus status);
 }
-

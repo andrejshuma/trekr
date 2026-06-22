@@ -13,6 +13,7 @@ import com.trekr.backend.entity.discipline.DisciplineUser;
 import com.trekr.backend.entity.discipline.DailyCompletion;
 import com.trekr.backend.entity.discipline.Task;
 import com.trekr.backend.entity.discipline.TaskDailyCompletion;
+import com.trekr.backend.entity.discipline.TaskStatus;
 import com.trekr.backend.entity.discipline.TaskDailyCompletionId;
 import com.trekr.backend.repository.DailyCompletionRepository;
 import com.trekr.backend.repository.DisciplineUserRepository;
@@ -80,7 +81,7 @@ public class DisciplineService {
                 userId, PageRequest.of(page, size));
 
         List<TaskDto> tasks = result.getContent().stream()
-                .map(t -> new TaskDto(t.getTaskId(), t.getName(), t.isFinished()))
+                .map(t -> new TaskDto(t.getTaskId(), t.getName(), t.isFinished(), t.getStatus(), t.getDescription(), t.getDueDate(), t.getPriority()))
                 .toList();
 
         return new TasksResponse(tasks, result.hasNext());
@@ -106,7 +107,7 @@ public class DisciplineService {
         task.setDisciplineUser(disciplineUser);
 
         Task saved = taskRepository.save(task);
-        return new TaskDto(saved.getTaskId(), saved.getName(), saved.isFinished());
+        return new TaskDto(saved.getTaskId(), saved.getName(), saved.isFinished(), saved.getStatus(), saved.getDescription(), saved.getDueDate(), saved.getPriority());
     }
 
     @Transactional
@@ -125,7 +126,7 @@ public class DisciplineService {
 
         task.setName(name.trim());
         Task saved = taskRepository.save(task);
-        return new TaskDto(saved.getTaskId(), saved.getName(), saved.isFinished());
+        return new TaskDto(saved.getTaskId(), saved.getName(), saved.isFinished(), saved.getStatus(), saved.getDescription(), saved.getDueDate(), saved.getPriority());
     }
 
     @Transactional
@@ -144,7 +145,7 @@ public class DisciplineService {
 
         task.setFinished(finished);
         Task saved = taskRepository.save(task);
-        return new TaskDto(saved.getTaskId(), saved.getName(), saved.isFinished());
+        return new TaskDto(saved.getTaskId(), saved.getName(), saved.isFinished(), saved.getStatus(), saved.getDescription(), saved.getDueDate(), saved.getPriority());
     }
 
     @Transactional
@@ -186,7 +187,7 @@ public class DisciplineService {
         }
 
         long total = taskRepository.countByDisciplineUser_UserId(userId);
-        long finished = taskRepository.countByDisciplineUser_UserIdAndFinishedTrue(userId);
+        long finished = taskRepository.countByDisciplineUser_UserIdAndStatus(userId, TaskStatus.FINISHED);
 
         BigDecimal percent;
         if (total <= 0) {
@@ -209,7 +210,7 @@ public class DisciplineService {
         // Link all tasks that were finished at calculation time
         // (not strictly required for now, but matches schema and enables future analytics)
         if (finished > 0) {
-            List<TaskDailyCompletion> links = taskRepository.findByDisciplineUser_UserIdAndFinishedTrue(userId)
+            List<TaskDailyCompletion> links = taskRepository.findByDisciplineUser_UserIdAndStatus(userId, TaskStatus.FINISHED)
                     .stream()
                     .map(t -> {
                         TaskDailyCompletion link = new TaskDailyCompletion();
@@ -223,7 +224,7 @@ public class DisciplineService {
         }
 
         // Reset all tasks for next day
-        taskRepository.resetFinishedForUser(userId);
+        taskRepository.resetStatusForUser(userId, TaskStatus.NOT_STARTED);
 
         DailyCompletionDto dto = new DailyCompletionDto(savedCompletion.getDailyCompletionId(),
                 savedCompletion.getDate(), savedCompletion.getProcent());

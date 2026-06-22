@@ -80,6 +80,14 @@ export async function updateCustomCategoryTaskFinished(
   return res?.data;
 }
 
+export async function updateCustomCategoryTaskStatus(customTrackingId, taskId, status) {
+  const res = await api.patch(
+    `/discipline/custom-tracking-categories/${customTrackingId}/tasks/${taskId}/status`,
+    { status }
+  );
+  return res?.data;
+}
+
 export async function deleteCustomCategoryTask(customTrackingId, taskId) {
   return api.delete(
     `/discipline/custom-tracking-categories/${customTrackingId}/tasks/${taskId}`
