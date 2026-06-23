@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: trekr-frontend:latest  # overwritten by pipeline via kubectl set image
+          image: DOCKERHUB_USERNAME/trekr-frontend:latest
           ports:
             - containerPort: 80
           readinessProbe:
@@ -31,10 +31,8 @@ metadata:
   name: frontend
   namespace: trekr
 spec:
-  type: NodePort
   selector:
     app: frontend
   ports:
     - port: 80
       targetPort: 80
-      nodePort: 30080

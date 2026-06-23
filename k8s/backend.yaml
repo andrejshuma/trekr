@@ -19,19 +19,16 @@ spec:
           command: [sh, -c, until pg_isready -h postgres -p 5432 -U trekr; do sleep 2; done]
       containers:
         - name: backend
-          image: trekr-backend:latest  # overwritten by pipeline via kubectl set image
+          image: DOCKERHUB_USERNAME/trekr-backend:latest
+          envFrom:
+            - configMapRef:
+                name: backend-config
           env:
-            - name: SPRING_DATASOURCE_URL
-              value: jdbc:postgresql://postgres:5432/trekr
-            - name: SPRING_DATASOURCE_USERNAME
-              value: trekr
             - name: SPRING_DATASOURCE_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: trekr-secrets
                   key: db-password
-            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
-              value: none
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:

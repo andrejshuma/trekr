@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: trekr
+data:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/trekr"
+  SPRING_DATASOURCE_USERNAME: "trekr"
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "none"
+  SPRING_JACKSON_SERIALIZATION_WRITE_DATES_AS_TIMESTAMPS: "false"
