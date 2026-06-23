@@ -1,0 +1,151 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+env:
+  BACKEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/trekr-backend
+  FRONTEND_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/trekr-frontend
+
+jobs:
+  # ── CI: build both images on every push / PR ──────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: false
+          cache-from: type=gha,scope=backend
+          cache-to:   type=gha,scope=backend,mode=max
+
+      - name: Build frontend image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: false
+          cache-from: type=gha,scope=frontend
+          cache-to:   type=gha,scope=frontend,mode=max
+
+  # ── CD part 1: push images to DockerHub (master only) ─────────────────────
+  push:
+    name: Push to DockerHub
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    outputs:
+      image_tag: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: true
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:latest
+            ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha,scope=backend
+          cache-to:   type=gha,scope=backend,mode=max
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:latest
+            ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha,scope=frontend
+          cache-to:   type=gha,scope=frontend,mode=max
+
+  # ── CD part 2: deploy to k3s cluster ──────────────────────────────────────
+  deploy:
+    name: Deploy to Kubernetes
+    runs-on: ubuntu-latest
+    needs: push
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+
+      - name: Configure kubeconfig
+        run: |
+          echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > $HOME/kubeconfig.yaml
+          chmod 600 $HOME/kubeconfig.yaml
+          echo "KUBECONFIG=$HOME/kubeconfig.yaml" >> $GITHUB_ENV
+
+      - name: Apply namespace
+        run: kubectl apply -f k8s/namespace.yaml
+
+      - name: Create / update app secrets
+        run: |
+          kubectl create secret generic trekr-secrets \
+            --namespace=trekr \
+            --from-literal=db-password=${{ secrets.DB_PASSWORD }} \
+            --from-literal=jwt-secret=${{ secrets.JWT_SECRET }} \
+            --save-config \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Create DB init ConfigMap from DDL
+        run: |
+          kubectl create configmap trekr-db-init \
+            --namespace=trekr \
+            --from-file=01-ddl.sql=db-scripts/ddl.sql \
+            --save-config \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply Postgres manifests
+        run: kubectl apply -f k8s/postgres.yaml
+
+      - name: Wait for Postgres to be ready
+        run: kubectl rollout status statefulset/postgres -n trekr --timeout=120s
+
+      - name: Apply backend manifests
+        run: kubectl apply -f k8s/backend.yaml
+
+      - name: Apply frontend manifests
+        run: kubectl apply -f k8s/frontend.yaml
+
+      - name: Roll out new images
+        run: |
+          kubectl set image deployment/backend \
+            backend=${{ env.BACKEND_IMAGE }}:${{ github.sha }} \
+            -n trekr
+          kubectl set image deployment/frontend \
+            frontend=${{ env.FRONTEND_IMAGE }}:${{ github.sha }} \
+            -n trekr
+
+      - name: Wait for rollout to complete
+        run: |
+          kubectl rollout status deployment/backend  -n trekr --timeout=180s
+          kubectl rollout status deployment/frontend -n trekr --timeout=60s
+
+      - name: Print app URL
+        run: |
+          NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}' 2>/dev/null || \
+                    kubectl get nodes -o jsonpath='{.items[0].status.addresses[0].address}')
+          echo "App available at: http://${NODE_IP}:30080"

@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: trekr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16-alpine
+          command: [sh, -c, until pg_isready -h postgres -p 5432 -U trekr; do sleep 2; done]
+      containers:
+        - name: backend
+          image: trekr-backend:latest  # overwritten by pipeline via kubectl set image
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/trekr
+            - name: SPRING_DATASOURCE_USERNAME
+              value: trekr
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: trekr-secrets
+                  key: db-password
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: none
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: trekr-secrets
+                  key: jwt-secret
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /api/auth/ping
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/auth/ping
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  namespace: trekr
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 8080
+      targetPort: 8080
